@@ -1,0 +1,317 @@
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path><path d="M0 0h24v24H0z" fill="none"></path></symbol>
+    <symbol id="pauseIcon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path><path d="M0 0h24v24H0z" fill="none"></path></symbol>
+    <symbol id="resetIcon" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"></path><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></symbol>
+</svg>
+
+<style>
+#demo {
+    font-size: 14px;
+    user-select: none;
+    grid-template-columns: auto;
+    grid-template-rows: auto auto auto;
+    grid-auto-flow: column;
+    row-gap: 10px;
+}
+
+.hint a {
+  color: inherit;
+}
+
+@media (min-width: 1000px) {
+  #demo {
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto auto;
+  }
+  #demo-controls {
+    grid-row: 1/3;
+  }
+}
+
+#demo-canvas {
+    border: 1px solid lightgrey;
+    image-rendering: pixelated;
+    touch-action: none;
+    width: 400px;
+}
+
+#demo-controls {
+    line-height: 1em;
+    display: grid;
+    grid-template-columns: 120px auto;
+    grid-template-rows: auto 60px 80px 75px 1fr;
+    row-gap: 20px;
+    overflow: hidden;
+}
+
+@media (min-width: 1000px){
+  #demo-controls {
+    grid-template-rows: auto 60px 80px 100px 1fr;
+  }
+}
+
+#pattern-selector {
+    grid-column: 1/3;
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    justify-items: center;
+}
+@media (max-width: 1000px) and  (min-width: 500px) {
+  #pattern-selector {
+    grid-template-columns: repeat(10, auto);
+  }
+}
+
+#pattern-selector * {
+    width: 40px;
+    height: 40px;
+    background-image: url('images/emoji.png');
+    cursor: pointer;
+}
+.icon {
+    width: 30px; height: 30px;
+    background: steelblue;
+    fill: white;
+    border-radius: 20px;
+    padding: 5px;
+    margin: 2px;
+    cursor: pointer;
+}
+#model-selector {
+    line-height: 1.4em;
+}
+#demo-tip{
+    display: grid;
+    grid-template-columns: 40px auto;
+    align-items: center;
+    column-gap: 10px;
+    margin-bottom: 20px;
+}
+#pointer {
+    width: 40px;
+}
+#status {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+    font-family: monospace;
+}
+#model-hints {
+    color: rgba(0, 0, 0, 0.6);
+    grid-column: 1/3;
+}
+#model-hints span {
+    display: none;
+}
+.hint {
+    color: rgba(0, 0, 0, 0.6);
+    line-height: 1.4em;
+    user-select: text;
+}
+
+input[type=range] {
+  -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+  width: 95%; /* Specific width is required for Firefox. */
+  background: transparent; /* Otherwise white in Chrome */
+  margin-bottom: 8px;
+}
+
+.hint a {
+  font-size: 90%;
+}
+
+@media (max-width: 350px) {
+  .hint a {
+    font-size: 75%;
+  }
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+}
+
+input[type=range]:focus {
+  outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  cursor: pointer;
+
+  /* Hides the slider so custom styles can be added */
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+/* Thumb */
+
+/* Special styling for WebKit/Blink */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
+
+/* All the same stuff for Firefox */
+input[type=range]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  border: none;
+}
+
+/* All the same stuff for IE */
+input[type=range]::-ms-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: grey;
+  cursor: pointer;
+}
+
+/* Track */
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+input[type=range]::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+input[type="radio"] {
+    background-color: steelblue;
+}
+
+#colab-hero-div { 
+  grid-column: 1/3;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(0, 0, 0, 0.1);
+  padding-top: 15px;
+}
+
+#colab-hero {
+  margin: auto;
+  display: block;
+  text-align: center;
+  width: 200px;
+  height: 16px;
+}
+
+</style>
+
+<div class="l-body-outset grid" id="demo">
+
+    <canvas id="demo-canvas" width="768" height="768"></canvas>
+
+    <div id="demo-tip">
+            <img id="pointer" src="images/pointer.svg">
+            <div class="hint">
+                Click or tap the image to erase the part of the pattern and see it regenerate.
+                Double clicking places a new seed cell on the grid.                
+            </div>
+    </div>
+
+    <div id="demo-controls">
+        <div id="pattern-selector">
+        </div>
+        <div>
+            <span id="play-pause">
+                <svg class="icon" id="play"><use xlink:href="#playIcon"></use></svg>
+                <svg class="icon" id="pause" style="display: none;"><use xlink:href="#pauseIcon"></use></svg>
+            </span>
+            <svg class="icon" id="reset"><use xlink:href="#resetIcon"></use></svg>
+        </div>
+        <div>
+            Speed: <span id="speedLabel"></span><br>
+            <input type="range" id="speed" min="-3" max="3" step="1" value="0"><br>
+            <div id="status">
+                Step <span id="stepCount"></span>
+                (<span id="ips"></span> step/s)
+            </div>
+        </div>
+        <div id="model-selector">
+            Model type:<br>
+            <input type="radio" name="model" id="ex1"> <label for="ex1">Growing</label><br>
+            <input type="radio" name="model" id="ex2"> <label for="ex2">Persistent</label><br>
+            <input type="radio" name="model" id="ex3"> <label for="ex3">Regenerating</label><br>        
+        </div>
+        <div style="white-space: nowrap;">
+            Rotation <span id="rotationLabel"></span>&nbsp;<span class="hint"><a href="#experiment-4">[experiment 4]</a></span>
+            <br>
+            <input type="range" id="rotation" min="0" max="360" step="1" value="0"><br>
+        </div>
+        <div id='model-hints' class="hint">
+            <span id="ex1-hint">
+                <b>Growing</b> models were trained to generate patterns, 
+                but don't know how to persist them. Some patterns explode, some decay,
+                but some happen to be almost stable or even regenerate parts!
+                <a href="#experiment-1">[experiment 1]</a>
+            </span>
+            <span id="ex2-hint">
+                <b>Persistent</b> models are trained to make the pattern stay for a prolonged
+                period of time. Interstingly, they often develop some regenerative
+                capabilities without being explicitly instructed to do so
+                <a href="#experiment-2">[experiment 2]</a>.
+            </span>
+            <span id="ex3-hint">
+                <b>Regenerating</b> models were subject to pattern damages during
+                training, so their regenerative capabilities are much stronger,
+                especially in the central area. <a href="#experiment-3">[experiment 3]</a>
+
+            </span>
+        </div>
+        <div id="colab-hero-div">
+          <a href="https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/growing_ca.ipynb" class="colab-root" id="colab-hero">Try in a <span class="colab-span">Notebook</span></a>
+        </div>
+    </div>
+</div>
+
+<script src="twgl.min.js"></script>
+<script type="module">
+    import { createDemo } from './demo.js'
+    createDemo('demo');
+</script>
