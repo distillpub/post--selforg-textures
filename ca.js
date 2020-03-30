@@ -35,7 +35,14 @@ function defInput(name) {
 }
 
 const PREFIX = `
-    precision highp float;
+    precision mediump float;
+
+    // "Hash without Sine" by David Hoskins (https://www.shadertoy.com/view/4djSRW)
+    float hash13(vec3 p3) {
+      p3  = fract(p3 * .1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
+    }
 
     struct Tensor {
         vec2 size;
@@ -82,23 +89,24 @@ const PROGRAMS = {
     paint: `
     uniform vec2 u_pos;
     uniform float u_r;
-    uniform float u_brush;
+    uniform vec4 u_brush;
 
     void main() {
         vec2 diff = abs(getOutputXY()-u_pos+0.5);
         diff = min(diff, u_output.size-diff);
         if (length(diff)>=u_r) 
           discard;
-        vec4 result = vec4(0.0);
-        if (u_brush>0.5) {
-            float ch = getOutputChannel();
-            result = vec4(vec3(float(ch>0.5)), 1.0);
-        }
-        setOutput(result);
+        setOutput(u_brush);
     }`,
     perception: `
+    ${defInput('u_control')}
     uniform float u_angle;
     const mat3 sobel = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
+
+    mat2 rotate(float ang) {
+        float s = sin(ang), c=cos(ang);
+        return mat2(c, s, -s, c);
+    }
 
     void main() {
         vec2 xy = getOutputXY();
@@ -116,16 +124,17 @@ const PROGRAMS = {
             dx += sobel[y][x]*a;
             dy += sobel[x][y]*a;
           }
-          float ang = u_angle;
-        //   if (xy.x<64.0)
-        //     ang += 3.14/2.0;
-          float s = sin(ang), c = cos(ang);
-          //vec2 v = normalize(xy-64.0);
-          //float c =-v.x, s=v.y;
+          //vec2 dir = u_control_read(xy, 0.0).zw;
+          vec2 dir = normalize(xy-vec2(96.0, 96.0));
+          dir = rotate(u_angle) * dir;
+          float s = dir.x, c = dir.y;
+          //float ang = u_angle;
+          //float s = sin(ang), c = cos(ang);
           setOutput(filterBand == 1.0 ? dx*c-dy*s : dx*s+dy*c);
         }
     }`,
     dense: `
+    ${defInput('u_control')}
     uniform sampler2D u_weightTex;
     uniform vec2 u_weightCoefs; // weigthScale, center
     
@@ -143,8 +152,9 @@ const PROGRAMS = {
           return;
     
       float dy = 1.0/(u_input.depth+1.0);
-      vec2 p = vec2((ch+0.5)/u_output.depth4/3.0, dy*0.5);
-      p.x += float(xy.x > 64.0)/3.0;
+      vec2 p = vec2((ch+0.5)/u_output.depth4, dy*0.5);
+      p += u_control_read(xy, 0.0).xy;
+      p /= vec2(3.0, 1.0);
       vec4 result = vec4(0.0);
       for (float i=0.0; i < MAX_PACKED_DEPTH; i+=1.0) {
           vec4 inVec = u_input_read(xy, i);
@@ -164,13 +174,6 @@ const PROGRAMS = {
     uniform float u_seed, u_updateProbability;
 
     varying vec2 uv;
-
-    // "Hash without Sine" by David Hoskins (https://www.shadertoy.com/view/4djSRW)
-    float hash13(vec3 p3) {
-      p3  = fract(p3 * .1031);
-      p3 += dot(p3, p3.yzx + 33.33);
-      return fract((p3.x + p3.y) * p3.z);
-    }
 
     void main() {
       vec2 xy = getOutputXY();
@@ -201,15 +204,6 @@ const PROGRAMS = {
             }
         }
     }`
-}
-
-function decodeArray(s, arrayType) {
-    const data = atob(s);
-    const buf = new Uint8Array(data.length);
-    for (var i=0; i<data.length; ++i) {
-        buf[i] = data.charCodeAt(i);
-    }
-    return new arrayType(buf.buffer);
 }
 
 
@@ -308,6 +302,7 @@ export function createCA(gl, models, gridSize) {
 
     let stateBuf = createTensor(gridW, gridH, CHANNEL_N);
     let newStateBuf = createTensor(gridW, gridH, CHANNEL_N);
+    const controlBuf = createTensor(gridW, gridH, 4);
     const perceptionBuf = createTensor(gridW, gridH, CHANNEL_N*3);
     const hiddenBuf = createTensor(gridW, gridH, 128, 'relu');
     const updateBuf = createTensor(gridW, gridH, CHANNEL_N);
@@ -318,10 +313,11 @@ export function createCA(gl, models, gridSize) {
     }
 
     const ops = [
-        ()=>runLayer('perception', perceptionBuf, {u_input: stateBuf, u_angle: rotationAngle}),
-        ()=>runLayer('dense', hiddenBuf, {u_input: perceptionBuf,
+        ()=>runLayer('perception', perceptionBuf, {u_input: stateBuf, u_control: controlBuf,
+            u_angle: rotationAngle}),
+        ()=>runLayer('dense', hiddenBuf, {u_input: perceptionBuf, u_control: controlBuf,
             u_weightTex: layerTex1.tex, u_weightCoefs: layerTex1.coefs}),
-        ()=>runLayer('dense', updateBuf, {u_input: hiddenBuf,
+        ()=>runLayer('dense', updateBuf, {u_input: hiddenBuf, u_control: controlBuf,
             u_weightTex: layerTex2.tex, u_weightCoefs: layerTex2.coefs}),
         ()=>runLayer('update', newStateBuf, {u_input: stateBuf, u_update: updateBuf,
             u_seed: Math.random()*1000, u_updateProbability: 0.5}),
@@ -340,20 +336,26 @@ export function createCA(gl, models, gridSize) {
     }
 
     let lastDamage = [0, 0, -1];
-    function paint(x, y, r, brush) {
-        runLayer('paint', stateBuf, {
+    function paint(x, y, r, brush, direction) {
+        let [dx, dy] = direction;
+        const norm = Math.max(Math.sqrt(dx*dx+dy*dy), 1e-8);
+        dx /= norm; dy /= norm;
+        runLayer('paint', controlBuf, {
             u_pos: [x, y], u_r: r,
-            u_brush: {clear: 0.0, seed: 1.0}[brush],
+            u_brush: [brush, 0, dx, dy],
         });
-        if (brush == 'clear' && r < 1000) {
-            lastDamage = [x, y, r]; 
-        }
+        // if (brush == 'clear' && r < 1000) {
+        //     lastDamage = [x, y, r]; 
+        // }
     }
     function reset() {
-      paint(0, 0, 10000, 'clear');
+      //paint(0, 0, 10000, 'clear');
       totalStepCount = 0;
     }
-    reset();
+    paint(0, 0, 10000, 0, [0.5, 0.5]);
+    paint(40, 100, 20, 1, [1.0, 0.0])
+    paint(80, 30, 30, 2, [0.0, -1.0])
+    //reset();
 
     function step() {
         for (const op of ops) op();
@@ -373,17 +375,17 @@ export function createCA(gl, models, gridSize) {
         }
     }
 
-    const visModes = ['color', 'state', 'perception', 'hidden', 'update'];
+    const visModes = ['color', 'state', 'perception', 'hidden', 'update', 'control'];
 
     function draw(visMode) {
-        visMode = visMode || 'state';
+        visMode = visMode || 'color';
         gl.useProgram(progs.vis.program);
         twgl.setBuffersAndAttributes(gl, progs.vis, quad);
         const uniforms = {u_raw: 0.0, u_lastDamage: lastDamage}
         lastDamage[2] = Math.max(-0.1, lastDamage[2]-1.0);
         let inputBuf = stateBuf;
         if (visMode != 'color') {
-            inputBuf = {stateBuf, perceptionBuf, hiddenBuf, updateBuf}[visMode+'Buf'];
+            inputBuf = {stateBuf, perceptionBuf, hiddenBuf, updateBuf, controlBuf}[visMode+'Buf'];
             uniforms.u_raw = 1.0;
         }
         setTensorUniforms(uniforms, 'u_input', inputBuf);

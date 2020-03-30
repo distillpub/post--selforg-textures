@@ -32,7 +32,7 @@
     border: 1px solid lightgrey;
     image-rendering: pixelated;
     touch-action: none;
-    width: 400px;
+    width: 576px;
 }
 
 #demo-controls {
@@ -65,7 +65,7 @@
 #pattern-selector * {
     width: 40px;
     height: 40px;
-    background-image: url('images/emoji.png');
+    /* background-image: url('images/emoji.png'); */
     cursor: pointer;
 }
 .icon {
@@ -245,7 +245,7 @@ input[type="radio"] {
 
 <div class="l-body-outset grid" id="demo">
 
-    <canvas id="demo-canvas" width="768" height="768"></canvas>
+    <canvas id="demo-canvas" width="512" height="512"></canvas>
 
     <div id="demo-tip">
             <img id="pointer" src="images/pointer.svg">
@@ -311,6 +311,7 @@ input[type="radio"] {
 </div>
 
 <script src="twgl.min.js"></script>
+<script src="dat.gui.min.js"></script>
 <script type="module">
     import { createDemo } from './demo.js'
     createDemo('demo');

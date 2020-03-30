@@ -13,7 +13,7 @@ export function createDemo(divId) {
     const $ = q=>root.querySelector(q);
     const $$ = q=>root.querySelectorAll(q);
   
-    const W=128, H=128;
+    const W=192, H=192;
     let ca;
     const modelDir = 'webgl_models8';
     let target = '🦎';
@@ -24,6 +24,17 @@ export function createDemo(divId) {
     const gl = canvas.getContext("webgl");
     canvas.width = W*6;
     canvas.height = H*6;
+
+    const params = {
+      brush: 0,
+      brushSize: 8,
+    };
+    const gui = new dat.GUI();
+    gui.add(params, 'brush').min(0).max(2).step(1);
+    gui.add(params, 'brushSize').min(1).max(32).step(1);
+
+
+
 
     function updateUI() {
       $$('#pattern-selector *').forEach(e=>{
@@ -73,8 +84,8 @@ export function createDemo(divId) {
 
       function canvasToGrid(x, y) {
         const [w, h] = ca.gridSize;
-        const gridX = Math.floor(x / canvas.clientWidth * w);
-        const gridY = Math.floor(y / canvas.clientHeight * h);
+        const gridX = x / canvas.clientWidth * w;
+        const gridY = y / canvas.clientHeight * h;
         return [gridX, gridY];
       }
       function getMousePos(e) {
@@ -85,28 +96,12 @@ export function createDemo(divId) {
         return canvasToGrid(touch.clientX-rect.left, touch.clientY - rect.top);
       }
   
-      let doubleClick = false;
-      let justSeeded = false;
+      let prevPos = [0, 0]
       function click(pos) {
         const [x, y] = pos;
-        if (doubleClick) {
-          ca.paint(x, y, 1, 'seed');
-          doubleClick = false;
-          justSeeded = true;
-          setTimeout(()=>{ justSeeded = false; }, 100);
-        } else {
-          doubleClick = true;
-          setTimeout(()=>{ 
-            doubleClick = false; 
-          }, 300);
-          ca.paint(x, y, 8, 'clear');
-        }
-      }
-      function move(pos) {
-        const [x, y] = pos;
-        if (!justSeeded) {
-          ca.paint(x, y, 8, 'clear');
-        }
+        const [px, py] = prevPos;
+        ca.paint(x, y, params.brushSize, params.brush, [x-px, y-py]);
+        prevPos = pos;
       }
 
       canvas.onmousedown = e => {
@@ -118,7 +113,7 @@ export function createDemo(divId) {
       canvas.onmousemove = e => {
         e.preventDefault();
         if (e.buttons == 1) {
-          move(getMousePos(e));
+          click(getMousePos(e));
         }
       }
       canvas.addEventListener("touchstart", e=>{
@@ -128,7 +123,7 @@ export function createDemo(divId) {
       canvas.addEventListener("touchmove", e=>{
         e.preventDefault();
         for (const t of e.touches) {
-          move(getTouchPos(t));
+          click(getTouchPos(t));
         }
       });
       updateUI();
