@@ -26,13 +26,13 @@ export function createDemo(divId) {
     canvas.height = H*6;
 
     const params = {
-      brush: 0,
+      brush: 1,
       brushSize: 8,
+      clear: ()=>ca.paint(0, 0, 10000, params.brush, [0, 0])
     };
     const gui = new dat.GUI();
-    gui.add(params, 'brush').min(0).max(2).step(1);
+    gui.add(params, 'clear')
     gui.add(params, 'brushSize').min(1).max(32).step(1);
-
 
 
 
@@ -130,16 +130,17 @@ export function createDemo(divId) {
     }
 
     async function updateModel() {
-      //const r = await fetch(`${modelDir}/${experiment}_${target}.json`);
       const r = await fetch(`models.json`);
-      const model = await r.json();
+      const models = await r.json();
       if (!ca) {
-        ca = createCA(gl, model, [W, H]);
+        ca = createCA(gl, models, [W, H], gui);
         window.ca = ca;
-        initUI();        
+        const brush2idx = Object.fromEntries(models.model_names.map((s, i)=>[s, i]));
+        gui.add(params, 'brush', brush2idx);
+        initUI();  
         requestAnimationFrame(render);
       } else {
-        ca.setWeights(model);
+        ca.setWeights(models);
         ca.reset();
       }
       updateUI();

@@ -35,13 +35,19 @@ function defInput(name) {
 }
 
 const PREFIX = `
-    precision mediump float;
+    precision highp float;
 
     // "Hash without Sine" by David Hoskins (https://www.shadertoy.com/view/4djSRW)
     float hash13(vec3 p3) {
       p3  = fract(p3 * .1031);
       p3 += dot(p3, p3.yzx + 33.33);
       return fract((p3.x + p3.y) * p3.z);
+    }
+    vec2 hash23(vec3 p3)
+    {
+        p3 = fract(p3 * vec3(.1031, .1030, .0973));
+        p3 += dot(p3, p3.yzx+33.33);
+        return fract((p3.xx+p3.yz)*p3.zy);
     }
 
     struct Tensor {
@@ -136,7 +142,9 @@ const PROGRAMS = {
     dense: `
     ${defInput('u_control')}
     uniform sampler2D u_weightTex;
+    uniform float u_seed, u_fuzz;
     uniform vec2 u_weightCoefs; // weigthScale, center
+    uniform vec2 u_layout;
     
     const float MAX_PACKED_DEPTH = 32.0;
     
@@ -150,11 +158,13 @@ const PROGRAMS = {
       float ch = getOutputChannel();
       if (ch >= u_output.depth4)
           return;
-    
-      float dy = 1.0/(u_input.depth+1.0);
+
+      float dy = 1.0/(u_input.depth+1.0)/u_layout.y;
       vec2 p = vec2((ch+0.5)/u_output.depth4, dy*0.5);
-      p += u_control_read(xy, 0.0).xy;
-      p /= vec2(3.0, 1.0);
+      vec2 fuzz = (hash23(vec3(xy, u_seed+ch))-0.5)*u_fuzz;
+
+      p += u_control_read(xy+fuzz, 0.0).xy;
+      p /= u_layout;
       vec4 result = vec4(0.0);
       for (float i=0.0; i < MAX_PACKED_DEPTH; i+=1.0) {
           vec4 inVec = u_input_read(xy, i);
@@ -207,9 +217,16 @@ const PROGRAMS = {
 }
 
 
-export function createCA(gl, models, gridSize) {
+export function createCA(gl, models, gridSize, gui) {
     gridSize = gridSize || [96, 96];
     const [gridW, gridH] = gridSize;
+
+    const params = {
+        fuzz: 8.0,
+        visMode: 'color'
+    };
+    gui.add(params, 'fuzz').min(0.0).max(64.0);
+    gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update', 'control']);
 
     function createPrograms() {
         const res = {};
@@ -220,7 +237,8 @@ export function createCA(gl, models, gridSize) {
         return res;
     }
 
-    function createTensor(h, w, depth, activation) {
+    function createTensor(h, w, depth, packScaleBias) {
+        packScaleBias = packScaleBias || [4.0, 127.0/255.0];
         const depth4 = Math.ceil(depth / 4);
         const gridW = Math.ceil(Math.sqrt(depth4));
         const gridH = Math.floor((depth4 + gridW - 1) / gridW);
@@ -229,13 +247,8 @@ export function createCA(gl, models, gridSize) {
         const attachments = [{ minMag: gl.NEAREST }];
         const fbi = twgl.createFramebufferInfo(gl, attachments, texW, texH);
         const tex = fbi.attachments[0];
-        let packScaleBias = [4.0, 127.0/255.0];
-        if (activation == 'relu') {
-            packScaleBias = [2.0, 0.0];
-        }
         return { _type: 'tensor',
-            fbi, w, h, depth, gridW, gridH, depth4, tex,
-            activation, packScaleBias};
+            fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleBias};
     }
 
     function setTensorUniforms(uniforms, name, tensor) {
@@ -277,7 +290,7 @@ export function createCA(gl, models, gridSize) {
         const tex = twgl.createTexture(gl, {
             minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
         });
-        return {tex, coefs};
+        return {tex, coefs, layout: params.layout};
     }
 
     let layerTex1 = null;
@@ -299,12 +312,11 @@ export function createCA(gl, models, gridSize) {
         position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
     });
     
-
+    const controlBuf = createTensor(gridW, gridH, 4, [255.0, 0.0]);
     let stateBuf = createTensor(gridW, gridH, CHANNEL_N);
     let newStateBuf = createTensor(gridW, gridH, CHANNEL_N);
-    const controlBuf = createTensor(gridW, gridH, 4);
     const perceptionBuf = createTensor(gridW, gridH, CHANNEL_N*3);
-    const hiddenBuf = createTensor(gridW, gridH, 128, 'relu');
+    const hiddenBuf = createTensor(gridW, gridH, 128, [2.0, 0.0]); // relu
     const updateBuf = createTensor(gridW, gridH, CHANNEL_N);
     
     let rotationAngle = 0.0;
@@ -312,13 +324,19 @@ export function createCA(gl, models, gridSize) {
       rotationAngle = v/180.0*Math.PI;
     }
 
+    let fuzzSeed = 0.0;
+
+    function runDense(output, input, layer) {
+        return runLayer('dense', output, {u_input: input, u_control: controlBuf,
+            u_weightTex: layer.tex, u_weightCoefs: layer.coefs, u_layout: layer.layout,
+            u_seed: Math.random()*1000, u_fuzz: params.fuzz});
+    }
+
     const ops = [
         ()=>runLayer('perception', perceptionBuf, {u_input: stateBuf, u_control: controlBuf,
             u_angle: rotationAngle}),
-        ()=>runLayer('dense', hiddenBuf, {u_input: perceptionBuf, u_control: controlBuf,
-            u_weightTex: layerTex1.tex, u_weightCoefs: layerTex1.coefs}),
-        ()=>runLayer('dense', updateBuf, {u_input: hiddenBuf, u_control: controlBuf,
-            u_weightTex: layerTex2.tex, u_weightCoefs: layerTex2.coefs}),
+        ()=>runDense(hiddenBuf, perceptionBuf, layerTex1),
+        ()=>runDense(updateBuf, hiddenBuf, layerTex2),
         ()=>runLayer('update', newStateBuf, {u_input: stateBuf, u_update: updateBuf,
             u_seed: Math.random()*1000, u_updateProbability: 0.5}),
     ];
@@ -375,10 +393,8 @@ export function createCA(gl, models, gridSize) {
         }
     }
 
-    const visModes = ['color', 'state', 'perception', 'hidden', 'update', 'control'];
-
-    function draw(visMode) {
-        visMode = visMode || 'color';
+    function draw() {
+        const visMode = params.visMode;
         gl.useProgram(progs.vis.program);
         twgl.setBuffersAndAttributes(gl, progs.vis, quad);
         const uniforms = {u_raw: 0.0, u_lastDamage: lastDamage}
@@ -432,6 +448,6 @@ export function createCA(gl, models, gridSize) {
         return `${(total).toFixed(2)} ms/step, ${(1000.0 / total).toFixed(2)} step/sec\n`+petOpStr+'\n\n';
     }
 
-    return {reset, step, draw, benchmark, setWeights, paint, visModes, gridSize, 
+    return {reset, step, draw, benchmark, setWeights, paint, gridSize, 
       fps, flush, getStepCount, setAngle};
 }
