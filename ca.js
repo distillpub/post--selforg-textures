@@ -12,9 +12,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const CHANNEL_N = 16;
-const MAX_ACTIVATION_VALUE = 4.0;
-
 const vs_code = `
     attribute vec4 position;
     varying vec2 uv;
@@ -82,6 +79,12 @@ const PREFIX = `
         return xy.y*u_output.gridSize.x+xy.x;
     }
 
+    int getOutputChannelI() {
+        vec2 xy = floor(gl_FragCoord.xy/u_output.size);
+        return int(xy.y*u_output.gridSize.x+xy.x);
+    }
+
+
     void setOutput(vec4 v) {
         vec2 p = u_output.packScaleBias;
         v = v/p.x + p.y;
@@ -105,38 +108,49 @@ const PROGRAMS = {
         setOutput(u_brush);
     }`,
     perception: `
-    ${defInput('u_control')}
     uniform float u_angle;
-    const mat3 sobel = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
+    const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
+    const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
+    const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
 
     mat2 rotate(float ang) {
         float s = sin(ang), c=cos(ang);
         return mat2(c, s, -s, c);
     }
 
+    vec4 conv3x3(vec2 xy, float inputCh, mat3 filter) {
+        vec4 a = vec4(0.0);
+        for (int y=0; y<3; ++y)
+        for (int x=0; x<3; ++x) {
+          vec2 p = xy+vec2(float(x-1), float(y-1));
+          a += filter[y][x] * u_input_read(p, inputCh);
+        }
+        return a;
+    }
+
     void main() {
         vec2 xy = getOutputXY();
         float ch = getOutputChannel();
+        if (ch >= u_output.depth4)
+            return;
+
+        int chi = getOutputChannelI();
+
         float filterBand = floor(ch/u_input.depth4);
         float inputCh = mod(ch, u_input.depth4);
-        if (filterBand == 0.0) {
+        // setOutput(vec4(float(chi==3)));
+        // return;
+        if (filterBand < 0.5) {
             setOutput(u_input_read(xy, inputCh));
+        } else if (filterBand < 2.5) {
+            vec4 dx = conv3x3(xy, inputCh, sobelX);
+            vec4 dy = conv3x3(xy, inputCh, sobelY);
+            vec2 dir = normalize(xy-vec2(96.0, 96.0));
+            dir = rotate(u_angle) * dir;
+            float s = dir.x, c = dir.y;
+            setOutput(filterBand < 1.5 ? dx*c-dy*s : dx*s+dy*c);
         } else {
-          vec4 dx = vec4(0.0), dy = vec4(0.0);
-          for (int y=0; y<3; ++y)
-          for (int x=0; x<3; ++x) {
-            vec2 p = xy+vec2(float(x-1), float(y-1));
-            vec4 a = u_input_read(p, inputCh);
-            dx += sobel[y][x]*a;
-            dy += sobel[x][y]*a;
-          }
-          //vec2 dir = u_control_read(xy, 0.0).zw;
-          vec2 dir = normalize(xy-vec2(96.0, 96.0));
-          dir = rotate(u_angle) * dir;
-          float s = dir.x, c = dir.y;
-          //float ang = u_angle;
-          //float s = sin(ang), c = cos(ang);
-          setOutput(filterBand == 1.0 ? dx*c-dy*s : dx*s+dy*c);
+            setOutput(conv3x3(xy, inputCh, gauss));
         }
     }`,
     dense: `
@@ -223,10 +237,10 @@ export function createCA(gl, models, gridSize, gui) {
 
     const params = {
         fuzz: 8.0,
-        visMode: 'color'
+        visMode: 'perception'
     };
     gui.add(params, 'fuzz').min(0.0).max(64.0);
-    gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update', 'control']);
+    gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
 
     function createPrograms() {
         const res = {};
@@ -285,12 +299,12 @@ export function createCA(gl, models, gridSize, gui) {
     }
 
     function createDenseInfo(params) {
-        //const [in_ch, out_ch] = params.shape;
         const coefs = [params.scale, 127.0/255.0];
         const tex = twgl.createTexture(gl, {
             minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
         });
-        return {tex, coefs, layout: params.layout};
+        const [in_n, out_n] = params.shape;
+        return {tex, coefs, layout: params.layout, in_n: in_n-1, out_n};
     }
 
     let layerTex1 = null;
@@ -312,12 +326,15 @@ export function createCA(gl, models, gridSize, gui) {
         position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
     });
     
+    const perception_n = layerTex1.in_n
+    const hidden_n = layerTex1.out_n;
+    const channel_n = layerTex2.out_n;
     const controlBuf = createTensor(gridW, gridH, 4, [255.0, 0.0]);
-    let stateBuf = createTensor(gridW, gridH, CHANNEL_N);
-    let newStateBuf = createTensor(gridW, gridH, CHANNEL_N);
-    const perceptionBuf = createTensor(gridW, gridH, CHANNEL_N*3);
-    const hiddenBuf = createTensor(gridW, gridH, 128, [2.0, 0.0]); // relu
-    const updateBuf = createTensor(gridW, gridH, CHANNEL_N);
+    let stateBuf = createTensor(gridW, gridH, channel_n);
+    let newStateBuf = createTensor(gridW, gridH, channel_n);
+    const perceptionBuf = createTensor(gridW, gridH, perception_n);
+    const hiddenBuf = createTensor(gridW, gridH, hidden_n, [2.0, 0.0]); // relu
+    const updateBuf = createTensor(gridW, gridH, channel_n);
     
     let rotationAngle = 0.0;
     function setAngle(v) {
@@ -333,8 +350,7 @@ export function createCA(gl, models, gridSize, gui) {
     }
 
     const ops = [
-        ()=>runLayer('perception', perceptionBuf, {u_input: stateBuf, u_control: controlBuf,
-            u_angle: rotationAngle}),
+        ()=>runLayer('perception', perceptionBuf, {u_input: stateBuf, u_angle: rotationAngle}),
         ()=>runDense(hiddenBuf, perceptionBuf, layerTex1),
         ()=>runDense(updateBuf, hiddenBuf, layerTex2),
         ()=>runLayer('update', newStateBuf, {u_input: stateBuf, u_update: updateBuf,
@@ -401,7 +417,7 @@ export function createCA(gl, models, gridSize, gui) {
         lastDamage[2] = Math.max(-0.1, lastDamage[2]-1.0);
         let inputBuf = stateBuf;
         if (visMode != 'color') {
-            inputBuf = {stateBuf, perceptionBuf, hiddenBuf, updateBuf, controlBuf}[visMode+'Buf'];
+            inputBuf = {stateBuf, perceptionBuf, hiddenBuf, updateBuf}[visMode+'Buf'];
             uniforms.u_raw = 1.0;
         }
         setTensorUniforms(uniforms, 'u_input', inputBuf);
