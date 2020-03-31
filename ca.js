@@ -79,12 +79,6 @@ const PREFIX = `
         return xy.y*u_output.gridSize.x+xy.x;
     }
 
-    int getOutputChannelI() {
-        vec2 xy = floor(gl_FragCoord.xy/u_output.size);
-        return int(xy.y*u_output.gridSize.x+xy.x);
-    }
-
-
     void setOutput(vec4 v) {
         vec2 p = u_output.packScaleBias;
         v = v/p.x + p.y;
@@ -108,7 +102,8 @@ const PROGRAMS = {
         setOutput(u_brush);
     }`,
     perception: `
-    uniform float u_angle;
+    uniform float u_angle, u_polar;
+    uniform vec2 u_polarFocus;
     const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
     const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
     const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
@@ -134,18 +129,17 @@ const PROGRAMS = {
         if (ch >= u_output.depth4)
             return;
 
-        int chi = getOutputChannelI();
-
-        float filterBand = floor(ch/u_input.depth4);
-        float inputCh = mod(ch, u_input.depth4);
-        // setOutput(vec4(float(chi==3)));
-        // return;
+        float filterBand = floor((ch+0.5)/u_input.depth4);
+        float inputCh = ch-filterBand*u_input.depth4;
         if (filterBand < 0.5) {
             setOutput(u_input_read(xy, inputCh));
         } else if (filterBand < 2.5) {
             vec4 dx = conv3x3(xy, inputCh, sobelX);
             vec4 dy = conv3x3(xy, inputCh, sobelY);
-            vec2 dir = normalize(xy-vec2(96.0, 96.0));
+            vec2 dir = vec2(1.0, 0.0);
+            if (u_polar > 0.5) {
+                dir = normalize(xy-u_polarFocus);
+            }
             dir = rotate(u_angle) * dir;
             float s = dir.x, c = dir.y;
             setOutput(filterBand < 1.5 ? dx*c-dy*s : dx*s+dy*c);
@@ -236,11 +230,13 @@ export function createCA(gl, models, gridSize, gui) {
     const [gridW, gridH] = gridSize;
 
     const params = {
+        polar: true,
         fuzz: 8.0,
-        visMode: 'perception'
+        visMode: 'color'
     };
     gui.add(params, 'fuzz').min(0.0).max(64.0);
     gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
+    gui.add(params, 'polar');
 
     function createPrograms() {
         const res = {};
@@ -350,7 +346,10 @@ export function createCA(gl, models, gridSize, gui) {
     }
 
     const ops = [
-        ()=>runLayer('perception', perceptionBuf, {u_input: stateBuf, u_angle: rotationAngle}),
+        ()=>runLayer('perception', perceptionBuf, {
+            u_input: stateBuf, u_angle: rotationAngle,
+            u_polar: params.polar, u_polarFocus: [gridW/2.0, gridH/2.0],
+        }),
         ()=>runDense(hiddenBuf, perceptionBuf, layerTex1),
         ()=>runDense(updateBuf, hiddenBuf, layerTex2),
         ()=>runLayer('update', newStateBuf, {u_input: stateBuf, u_update: updateBuf,

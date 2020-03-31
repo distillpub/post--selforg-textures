@@ -13,7 +13,7 @@ export function createDemo(divId) {
     const $ = q=>root.querySelector(q);
     const $$ = q=>root.querySelectorAll(q);
   
-    const W=192, H=192;
+    const W=256, H=256;
     let ca;
     const modelDir = 'webgl_models8';
     let target = '🦎';
@@ -130,7 +130,7 @@ export function createDemo(divId) {
     }
 
     async function updateModel() {
-      const r = await fetch(`models.json`);
+      const r = await fetch(`models_v1.json`);
       const models = await r.json();
       if (!ca) {
         ca = createCA(gl, models, [W, H], gui);
