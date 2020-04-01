@@ -12,6 +12,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+const MAX_ACTIVATION = 2.0
+
 const vs_code = `
     attribute vec4 position;
     varying vec2 uv;
@@ -62,15 +64,14 @@ const PREFIX = `
         return v;
     }
 
+#if 1 // channel major order
     vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
-        vec2 p = fract(pos/tensor.size);
         ch += 0.5;
         float tx = floor(mod(ch, tensor.gridSize.x));
         float ty = floor(ch / tensor.gridSize.x);
-        p += vec2(tx, ty);
+        vec2 p = fract(pos/tensor.size) + vec2(tx, ty);
         return _readUV(tensor, tex, p/tensor.gridSize);
     }
-
     vec2 getOutputXY() {
         return mod(gl_FragCoord.xy, u_output.size);
     }
@@ -78,11 +79,28 @@ const PREFIX = `
         vec2 xy = floor(gl_FragCoord.xy/u_output.size);
         return xy.y*u_output.gridSize.x+xy.x;
     }
+#else
+    vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
+        ch += 0.5;
+        float tx = floor(mod(ch, tensor.gridSize.x));
+        float ty = floor(ch / tensor.gridSize.x);
+        vec2 p = floor(pos) + vec2(tx, ty)/tensor.gridSize;
+        return _readUV(tensor, tex, fract(p/tensor.size));
+    }
+    vec2 getOutputXY() {
+        return floor(gl_FragCoord.xy/u_output.gridSize)+0.5;
+    }
+    float getOutputChannel() {
+        vec2 xy = floor(mod(gl_FragCoord.xy, u_output.gridSize));
+        return xy.y*u_output.gridSize.x+xy.x;
+    }
+#endif
 
     void setOutput(vec4 v) {
         vec2 p = u_output.packScaleBias;
         v = v/p.x + p.y;
         gl_FragColor = v;
+        //gl_FragColor = vec4(getOutputXY()/u_output.size, getOutputChannel()/u_output.depth4, 1.0);
     }
 
     ${defInput('u_input')}
@@ -104,6 +122,10 @@ const PROGRAMS = {
     perception: `
     uniform float u_angle, u_polar;
     uniform vec2 u_polarFocus;
+    #ifdef SPARSE_UPDATE
+        ${defInput('u_shuffle')}
+        uniform vec2 u_shuffle_ofs;
+    #endif
     const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
     const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
     const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
@@ -125,6 +147,9 @@ const PROGRAMS = {
 
     void main() {
         vec2 xy = getOutputXY();
+        #ifdef SPARSE_UPDATE
+            xy = u_shuffle_read(xy+u_shuffle_ofs, 0.0).xy;
+        #endif
         float ch = getOutputChannel();
         if (ch >= u_output.depth4)
             return;
@@ -136,7 +161,7 @@ const PROGRAMS = {
         } else if (filterBand < 2.5) {
             vec4 dx = conv3x3(xy, inputCh, sobelX);
             vec4 dy = conv3x3(xy, inputCh, sobelY);
-            vec2 dir = vec2(1.0, 0.0);
+            vec2 dir = vec2(0.0, 1.0);
             if (u_polar > 0.5) {
                 dir = normalize(xy-u_polarFocus);
             }
@@ -189,6 +214,11 @@ const PROGRAMS = {
     }`,
     update: `
     ${defInput('u_update')}
+    #ifdef SPARSE_UPDATE
+        ${defInput('u_unshuffle')}
+        uniform vec2 u_shuffle_ofs;
+        uniform vec2 u_update_buf_size;
+    #endif
     uniform float u_seed, u_updateProbability;
 
     varying vec2 uv;
@@ -196,8 +226,17 @@ const PROGRAMS = {
     void main() {
       vec2 xy = getOutputXY();
       vec4 state = u_input_readUV(uv);
-      vec4 update = u_update_readUV(uv);
-      update *= float(hash13(vec3(xy, u_seed)) <= u_updateProbability);
+      #ifdef SPARSE_UPDATE
+        vec2 shuffled_xy = u_unshuffle_read(xy)-u_shuffle_ofs;
+        shuffled_xy = mod(shuffled_xy, u_output.size);
+        vec4 update = vec4(0.0);
+        if (shuffled_xy.x<u_update_buf_size.x && shuffled_xy.x<u_update_buf_size.y) {
+            update = u_update_read(shuffled_xy, getOutputChannel());
+        }
+      #else
+        vec4 update = u_update_readUV(uv);
+        update *= float(hash13(vec3(xy, u_seed)) <= u_updateProbability);
+      #endif
       setOutput(state + update);
     }`,
     vis: `
@@ -213,7 +252,7 @@ const PROGRAMS = {
         } else {
             xy *= u_input.size;
             vec4 rgba = u_input_read(xy, 0.0);
-            gl_FragColor = vec4(rgba.rgb/2.0+0.5, 1.0);//1.0-rgba.a + rgba;
+            gl_FragColor = vec4(rgba.rgb/2.0+0.5, 1.0);  //1.0-rgba.a + rgba;
             vec2 diff = abs(xy-u_lastDamage.xy+0.5);
             diff = min(diff, u_input.size-diff);
             if (length(diff) < u_lastDamage.z) {
@@ -238,17 +277,18 @@ export function createCA(gl, models, gridSize, gui) {
     gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
     gui.add(params, 'polar');
 
-    function createPrograms() {
+    function createPrograms(defines) {
+        defines = defines || '';
         const res = {};
         for (const name in PROGRAMS) {
-            const fs_code = PREFIX + PROGRAMS[name];
+            const fs_code = defines + PREFIX + PROGRAMS[name];
             res[name] = twgl.createProgramInfo(gl, [vs_code, fs_code]);
         }
         return res;
     }
 
     function createTensor(h, w, depth, packScaleBias) {
-        packScaleBias = packScaleBias || [4.0, 127.0/255.0];
+        packScaleBias = packScaleBias || [MAX_ACTIVATION*2.0, 127.0/255.0];
         const depth4 = Math.ceil(depth / 4);
         const gridW = Math.ceil(Math.sqrt(depth4));
         const gridH = Math.floor((depth4 + gridW - 1) / gridW);
@@ -329,15 +369,13 @@ export function createCA(gl, models, gridSize, gui) {
     let stateBuf = createTensor(gridW, gridH, channel_n);
     let newStateBuf = createTensor(gridW, gridH, channel_n);
     const perceptionBuf = createTensor(gridW, gridH, perception_n);
-    const hiddenBuf = createTensor(gridW, gridH, hidden_n, [2.0, 0.0]); // relu
+    const hiddenBuf = createTensor(gridW, gridH, hidden_n, [MAX_ACTIVATION, 0.0]); // relu
     const updateBuf = createTensor(gridW, gridH, channel_n);
     
     let rotationAngle = 0.0;
     function setAngle(v) {
       rotationAngle = v/180.0*Math.PI;
     }
-
-    let fuzzSeed = 0.0;
 
     function runDense(output, input, layer) {
         return runLayer('dense', output, {u_input: input, u_control: controlBuf,
@@ -385,9 +423,9 @@ export function createCA(gl, models, gridSize, gui) {
       //paint(0, 0, 10000, 'clear');
       totalStepCount = 0;
     }
-    paint(0, 0, 10000, 0, [0.5, 0.5]);
-    paint(40, 100, 20, 1, [1.0, 0.0])
-    paint(80, 30, 30, 2, [0.0, -1.0])
+    paint(0, 0, 10000, 1, [0.5, 0.5]);
+    paint(40, 100, 20, 2, [1.0, 0.0])
+    paint(80, 30, 30, 3, [0.0, -1.0])
     //reset();
 
     function step() {

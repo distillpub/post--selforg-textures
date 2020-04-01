@@ -130,7 +130,7 @@ export function createDemo(divId) {
     }
 
     async function updateModel() {
-      const r = await fetch(`models_v1.json`);
+      const r = await fetch(`models.json`);
       const models = await r.json();
       if (!ca) {
         ca = createCA(gl, models, [W, H], gui);
