@@ -28,10 +28,10 @@ export function createDemo(divId) {
     const params = {
       brush: 1,
       brushSize: 8,
-      clear: ()=>ca.paint(0, 0, 10000, params.brush, [0, 0])
+      autoFill: true,
     };
     const gui = new dat.GUI();
-    gui.add(params, 'clear')
+    gui.add(params, 'autoFill')
     gui.add(params, 'brushSize').min(1).max(32).step(1);
 
 
@@ -136,7 +136,10 @@ export function createDemo(divId) {
         ca = createCA(gl, models, [W, H], gui);
         window.ca = ca;
         const brush2idx = Object.fromEntries(models.model_names.map((s, i)=>[s, i]));
-        gui.add(params, 'brush', brush2idx);
+        gui.add(params, 'brush', brush2idx).onChange(()=>{
+          if (params.autoFill)
+            ca.paint(0, 0, 10000, params.brush, [0, 0]);
+        });
         initUI();  
         requestAnimationFrame(render);
       } else {
