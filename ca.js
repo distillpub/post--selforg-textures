@@ -64,7 +64,6 @@ const PREFIX = `
         return v;
     }
 
-#if 1 // channel major order
     vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
         ch += 0.5;
         float tx = floor(mod(ch, tensor.gridSize.x));
@@ -79,22 +78,6 @@ const PREFIX = `
         vec2 xy = floor(gl_FragCoord.xy/u_output.size);
         return xy.y*u_output.gridSize.x+xy.x;
     }
-#else
-    vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
-        ch += 0.5;
-        float tx = floor(mod(ch, tensor.gridSize.x));
-        float ty = floor(ch / tensor.gridSize.x);
-        vec2 p = floor(pos) + vec2(tx, ty)/tensor.gridSize;
-        return _readUV(tensor, tex, fract(p/tensor.size));
-    }
-    vec2 getOutputXY() {
-        return floor(gl_FragCoord.xy/u_output.gridSize)+0.5;
-    }
-    float getOutputChannel() {
-        vec2 xy = floor(mod(gl_FragCoord.xy, u_output.gridSize));
-        return xy.y*u_output.gridSize.x+xy.x;
-    }
-#endif
 
     void setOutput(vec4 v) {
         vec2 p = u_output.packScaleBias;
@@ -102,6 +85,11 @@ const PREFIX = `
         gl_FragColor = v;
         //gl_FragColor = vec4(getOutputXY()/u_output.size, getOutputChannel()/u_output.depth4, 1.0);
     }
+
+    #ifdef SPARSE_UPDATE
+        uniform sampler2D u_shuffleTex, u_unshuffleTex;
+        uniform vec2 u_shuffleOfs;
+    #endif
 
     ${defInput('u_input')}
 `;
@@ -122,10 +110,6 @@ const PROGRAMS = {
     perception: `
     uniform float u_angle, u_polar;
     uniform vec2 u_polarFocus;
-    #ifdef SPARSE_UPDATE
-        ${defInput('u_shuffle')}
-        uniform vec2 u_shuffle_ofs;
-    #endif
     const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
     const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
     const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
@@ -148,7 +132,8 @@ const PROGRAMS = {
     void main() {
         vec2 xy = getOutputXY();
         #ifdef SPARSE_UPDATE
-            xy = u_shuffle_read(xy+u_shuffle_ofs, 0.0).xy;
+            xy = texture2D(u_shuffleTex, xy/u_output.size).xy*255.0+0.5 + u_shuffleOfs;
+            xy = mod(xy, u_input.size);
         #endif
         float ch = getOutputChannel();
         if (ch >= u_output.depth4)
@@ -196,7 +181,11 @@ const PROGRAMS = {
       vec2 p = vec2((ch+0.5)/u_output.depth4, dy*0.5);
       vec2 fuzz = (hash23(vec3(xy, u_seed+ch))-0.5)*u_fuzz;
 
-      p += u_control_read(xy+fuzz, 0.0).xy;
+      vec2 realXY = xy;
+      #ifdef SPARSE_UPDATE
+        realXY = texture2D(u_shuffleTex, xy/u_output.size).xy*255.0+0.5 + u_shuffleOfs;
+      #endif
+      p += u_control_read(realXY+fuzz, 0.0).xy;
       p /= u_layout;
       vec4 result = vec4(0.0);
       for (float i=0.0; i < MAX_PACKED_DEPTH; i+=1.0) {
@@ -214,11 +203,6 @@ const PROGRAMS = {
     }`,
     update: `
     ${defInput('u_update')}
-    #ifdef SPARSE_UPDATE
-        ${defInput('u_unshuffle')}
-        uniform vec2 u_shuffle_ofs;
-        uniform vec2 u_update_buf_size;
-    #endif
     uniform float u_seed, u_updateProbability;
 
     varying vec2 uv;
@@ -226,16 +210,16 @@ const PROGRAMS = {
     void main() {
       vec2 xy = getOutputXY();
       vec4 state = u_input_readUV(uv);
+      vec4 update = vec4(0.0);
       #ifdef SPARSE_UPDATE
-        vec2 shuffled_xy = u_unshuffle_read(xy)-u_shuffle_ofs;
-        shuffled_xy = mod(shuffled_xy, u_output.size);
-        vec4 update = vec4(0.0);
-        if (shuffled_xy.x<u_update_buf_size.x && shuffled_xy.x<u_update_buf_size.y) {
-            update = u_update_read(shuffled_xy, getOutputChannel());
+        vec4 shuffleInfo = texture2D(u_unshuffleTex, fract((xy-u_shuffleOfs)/u_output.size));
+        if (shuffleInfo.z > 0.5) {
+            update = u_update_read(shuffleInfo.xy*255.0+0.5, getOutputChannel());
         }
       #else
-        vec4 update = u_update_readUV(uv);
-        update *= float(hash13(vec3(xy, u_seed)) <= u_updateProbability);
+        if (hash13(vec3(xy, u_seed)) <= u_updateProbability) {
+            update = u_update_readUV(uv);    
+        }
       #endif
       setOutput(state + update);
     }`,
@@ -243,6 +227,7 @@ const PROGRAMS = {
     uniform float u_raw;
     uniform vec3 u_lastDamage;
     varying vec2 uv;
+    uniform sampler2D u_tex;
 
     void main() {
         vec2 xy = vec2(uv.x, 1.0-uv.y);
@@ -287,7 +272,7 @@ export function createCA(gl, models, gridSize, gui) {
         return res;
     }
 
-    function createTensor(h, w, depth, packScaleBias) {
+    function createTensor(w, h, depth, packScaleBias) {
         packScaleBias = packScaleBias || [MAX_ACTIVATION*2.0, 127.0/255.0];
         const depth4 = Math.ceil(depth / 4);
         const gridW = Math.ceil(Math.sqrt(depth4));
@@ -356,42 +341,70 @@ export function createCA(gl, models, gridSize, gui) {
     }
     setWeights(models);
 
-
-    const progs = createPrograms();
+    const shuffledMode = true;
+    const progs = createPrograms(shuffledMode?'#define SPARSE_UPDATE\n':'');
     const quad = twgl.createBufferInfoFromArrays(gl, {
         position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
     });
+
+    const updateProbability = 0.5;
+    const shuffleH = Math.ceil(gridH * updateProbability);
+    const shuffleCellN = shuffleH*gridW;
+    const totalCellN = gridW*gridH;
+    const shuffleBuf = new Uint8Array(shuffleCellN*4);
+    const unshuffleBuf = new Uint8Array(totalCellN*4);
+    let k=0;
+    for (let i=0; i < totalCellN; ++i) {
+        if (Math.random()<(shuffleCellN-k)/(totalCellN-i)) {
+            shuffleBuf[k*4+0] = i%gridW;
+            shuffleBuf[k*4+1] = Math.floor(i/gridW);
+            unshuffleBuf[i*4+0] = k%gridW;
+            unshuffleBuf[i*4+1] = Math.floor(k/gridW);
+            unshuffleBuf[i*4+2] = 255;
+            k += 1;
+        }
+    }
+    const shuffleTex = twgl.createTexture(gl, {minMag: gl.NEAREST, width: gridW, height: shuffleH, src: shuffleBuf});
+    const unshuffleTex = twgl.createTexture(gl, {minMag: gl.NEAREST, width: gridW, height: gridH, src: unshuffleBuf});
+
+    const updateH = shuffledMode ? shuffleH : gridH;
     
-    const perception_n = layerTex1.in_n
+    const perception_n = layerTex1.in_n;
     const hidden_n = layerTex1.out_n;
     const channel_n = layerTex2.out_n;
     const controlBuf = createTensor(gridW, gridH, 4, [255.0, 0.0]);
     let stateBuf = createTensor(gridW, gridH, channel_n);
     let newStateBuf = createTensor(gridW, gridH, channel_n);
-    const perceptionBuf = createTensor(gridW, gridH, perception_n);
-    const hiddenBuf = createTensor(gridW, gridH, hidden_n, [MAX_ACTIVATION, 0.0]); // relu
-    const updateBuf = createTensor(gridW, gridH, channel_n);
+    const perceptionBuf = createTensor(gridW, updateH, perception_n);
+    const hiddenBuf = createTensor(gridW, updateH, hidden_n, [MAX_ACTIVATION, 0.0]); // relu
+    const updateBuf = createTensor(gridW, updateH, channel_n);
     
     let rotationAngle = 0.0;
     function setAngle(v) {
       rotationAngle = v/180.0*Math.PI;
     }
 
+    let shuffleOfs = [0, 0];
+
     function runDense(output, input, layer) {
         return runLayer('dense', output, {u_input: input, u_control: controlBuf,
             u_weightTex: layer.tex, u_weightCoefs: layer.coefs, u_layout: layer.layout,
+            u_shuffleTex: shuffleTex, u_shuffleOfs: shuffleOfs,
             u_seed: Math.random()*1000, u_fuzz: params.fuzz});
     }
 
     const ops = [
-        ()=>runLayer('perception', perceptionBuf, {
-            u_input: stateBuf, u_angle: rotationAngle,
-            u_polar: params.polar, u_polarFocus: [gridW/2.0, gridH/2.0],
-        }),
+        ()=>{
+            shuffleOfs = [Math.floor(Math.random()*gridW), Math.floor(Math.random()*gridH)];
+            return runLayer('perception', perceptionBuf, {
+                u_input: stateBuf, u_angle: rotationAngle, u_shuffleTex: shuffleTex, u_shuffleOfs: shuffleOfs,
+                u_polar: params.polar, u_polarFocus: [gridW/2.0, gridH/2.0]})
+        },
         ()=>runDense(hiddenBuf, perceptionBuf, layerTex1),
         ()=>runDense(updateBuf, hiddenBuf, layerTex2),
-        ()=>runLayer('update', newStateBuf, {u_input: stateBuf, u_update: updateBuf,
-            u_seed: Math.random()*1000, u_updateProbability: 0.5}),
+        ()=>runLayer('update', newStateBuf, {u_input: stateBuf, u_update: updateBuf, 
+            u_unshuffleTex: unshuffleTex, u_shuffleOfs: shuffleOfs,
+            u_seed: Math.random()*1000, u_updateProbability: updateProbability}),
     ];
 
 
