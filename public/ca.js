@@ -260,7 +260,7 @@ export function createCA(gl, models, gridSize, gui) {
         fuzz: 8.0,
         visMode: 'color'
     };
-    gui.add(params, 'fuzz').min(0.0).max(64.0);
+    gui.add(params, 'fuzz').min(0.0).max(128.0);
     gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
     gui.add(params, 'alignment', {cartesian:0, polar:1, bipolar:2});
 
@@ -422,13 +422,10 @@ export function createCA(gl, models, gridSize, gui) {
     }
 
     let lastDamage = [0, 0, -1];
-    function paint(x, y, r, brush, direction) {
-        let [dx, dy] = direction;
-        const norm = Math.max(Math.sqrt(dx*dx+dy*dy), 1e-8);
-        dx /= norm; dy /= norm;
+    function paint(x, y, r, brush) {
         runLayer('paint', controlBuf, {
             u_pos: [x, y], u_r: r,
-            u_brush: [brush, 0, dx, dy],
+            u_brush: [brush, 0, 0, 0],
         });
         // if (brush == 'clear' && r < 1000) {
         //     lastDamage = [x, y, r]; 
@@ -438,10 +435,11 @@ export function createCA(gl, models, gridSize, gui) {
       //paint(0, 0, 10000, 'clear');
       totalStepCount = 0;
     }
-    paint(0, 0, 10000, 1, [0.5, 0.5]);
-    paint(40, 100, 20, 2, [1.0, 0.0])
-    paint(80, 30, 30, 3, [0.0, -1.0])
     //reset();
+    runLayer('paint', stateBuf, {
+        u_pos: [0, 0], u_r: 10000,
+        u_brush: [0, 0, 0, 0],
+    });
 
     function step() {
         for (const op of ops) op();

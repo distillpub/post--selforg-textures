@@ -27,7 +27,7 @@ export function createDemo(divId) {
 
   const params = {
     modelSet: 'models.json',
-    model: 1,
+    model: 10,
     brushSize: 8,
     autoFill: true,
   };
@@ -150,6 +150,8 @@ export function createDemo(divId) {
     const firstTime = ca == null;
     createGUI(models);
     ca = createCA(gl, models, [W, H], gui);
+    ca.paint(0, 0, 10000, 17, [0.5, 0.5]);
+
     window.ca = ca;
     if (firstTime) {
       initUI();
