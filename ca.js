@@ -108,8 +108,7 @@ const PROGRAMS = {
         setOutput(u_brush);
     }`,
     perception: `
-    uniform float u_angle, u_polar;
-    uniform vec2 u_polarFocus;
+    uniform float u_angle, u_alignment;
     const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
     const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
     const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
@@ -147,8 +146,12 @@ const PROGRAMS = {
             vec4 dx = conv3x3(xy, inputCh, sobelX);
             vec4 dy = conv3x3(xy, inputCh, sobelY);
             vec2 dir = vec2(0.0, 1.0);
-            if (u_polar > 0.5) {
-                dir = normalize(xy-u_polarFocus);
+            if (u_alignment == 1.0) {
+                dir = normalize(xy-0.5*u_input.size);
+            } else if (u_alignment == 2.0) {
+                vec2 v1 = xy-0.25*u_input.size;
+                vec2 v2 = 0.75*u_input.size-xy;
+                dir = normalize(v1/pow(length(v1), 3.0) +  v2/pow(length(v2), 3.0));
             }
             dir = rotate(u_angle) * dir;
             float s = dir.x, c = dir.y;
@@ -227,7 +230,6 @@ const PROGRAMS = {
     uniform float u_raw;
     uniform vec3 u_lastDamage;
     varying vec2 uv;
-    uniform sampler2D u_tex;
 
     void main() {
         vec2 xy = vec2(uv.x, 1.0-uv.y);
@@ -254,13 +256,13 @@ export function createCA(gl, models, gridSize, gui) {
     const [gridW, gridH] = gridSize;
 
     const params = {
-        polar: true,
+        alignment: 1,
         fuzz: 8.0,
         visMode: 'color'
     };
     gui.add(params, 'fuzz').min(0.0).max(64.0);
     gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
-    gui.add(params, 'polar');
+    gui.add(params, 'alignment', {cartesian:0, polar:1, bipolar:2});
 
     function createPrograms(defines) {
         defines = defines || '';
@@ -398,7 +400,7 @@ export function createCA(gl, models, gridSize, gui) {
             shuffleOfs = [Math.floor(Math.random()*gridW), Math.floor(Math.random()*gridH)];
             return runLayer('perception', perceptionBuf, {
                 u_input: stateBuf, u_angle: rotationAngle, u_shuffleTex: shuffleTex, u_shuffleOfs: shuffleOfs,
-                u_polar: params.polar, u_polarFocus: [gridW/2.0, gridH/2.0]})
+                u_alignment: params.alignment})
         },
         ()=>runDense(hiddenBuf, perceptionBuf, layerTex1),
         ()=>runDense(updateBuf, hiddenBuf, layerTex2),
