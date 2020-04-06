@@ -63,13 +63,17 @@ const PREFIX = `
         v = (v-p.y)*p.x;
         return v;
     }
-
-    vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
+    vec2 _getUV(Tensor tensor, vec2 pos, float ch) {
         ch += 0.5;
         float tx = floor(mod(ch, tensor.gridSize.x));
         float ty = floor(ch / tensor.gridSize.x);
         vec2 p = fract(pos/tensor.size) + vec2(tx, ty);
-        return _readUV(tensor, tex, p/tensor.gridSize);
+        p /= tensor.gridSize;
+        return p;
+    }
+    vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
+        vec2 p = _getUV(tensor, pos, ch);
+        return _readUV(tensor, tex, p);
     }
     vec2 getOutputXY() {
         return mod(gl_FragCoord.xy, u_output.size);
@@ -83,7 +87,6 @@ const PREFIX = `
         vec2 p = u_output.packScaleBias;
         v = v/p.x + p.y;
         gl_FragColor = v;
-        //gl_FragColor = vec4(getOutputXY()/u_output.size, getOutputChannel()/u_output.depth4, 1.0);
     }
 
     #ifdef SPARSE_UPDATE
@@ -164,14 +167,14 @@ const PROGRAMS = {
     ${defInput('u_control')}
     uniform sampler2D u_weightTex;
     uniform float u_seed, u_fuzz;
-    uniform vec2 u_weightCoefs; // weigthScale, center
+    uniform vec2 u_weightCoefs; // scale, center
     uniform vec2 u_layout;
     
     const float MAX_PACKED_DEPTH = 32.0;
     
-    vec4 readWeight(vec2 p) {
+    vec4 readWeightUnscaled(vec2 p) {
         vec4 w = texture2D(u_weightTex, p);
-        return (w-u_weightCoefs.y)*u_weightCoefs.x; 
+        return w-u_weightCoefs.y;
     }
     
     void main() {
@@ -193,16 +196,16 @@ const PROGRAMS = {
       vec4 result = vec4(0.0);
       for (float i=0.0; i < MAX_PACKED_DEPTH; i+=1.0) {
           vec4 inVec = u_input_read(xy, i);
-          result += inVec.x * readWeight(p); p.y += dy;
-          result += inVec.y * readWeight(p); p.y += dy;
-          result += inVec.z * readWeight(p); p.y += dy;
-          result += inVec.w * readWeight(p); p.y += dy;
+          result += inVec.x * readWeightUnscaled(p); p.y += dy;
+          result += inVec.y * readWeightUnscaled(p); p.y += dy;
+          result += inVec.z * readWeightUnscaled(p); p.y += dy;
+          result += inVec.w * readWeightUnscaled(p); p.y += dy;
           if (i+1.5>u_input.depth4) {
               break;
           }
       }
-      result += readWeight(p);  // bias
-      setOutput(result);
+      result += readWeightUnscaled(p);  // bias
+      setOutput(result*u_weightCoefs.x);
     }`,
     update: `
     ${defInput('u_update')}
@@ -250,6 +253,50 @@ const PROGRAMS = {
     }`
 }
 
+function createPrograms(gl, defines) {
+    defines = defines || '';
+    const res = {};
+    for (const name in PROGRAMS) {
+        const fs_code = defines + PREFIX + PROGRAMS[name];
+        res[name] = twgl.createProgramInfo(gl, [vs_code, fs_code]);
+    }
+    return res;
+}
+
+function createTensor(gl, w, h, depth, packScaleBias) {
+    packScaleBias = packScaleBias || [MAX_ACTIVATION*2.0, 127.0/255.0];
+    const depth4 = Math.ceil(depth / 4);
+    const gridW = Math.ceil(Math.sqrt(depth4));
+    const gridH = Math.floor((depth4 + gridW - 1) / gridW);
+    const texW = w * gridW, texH = h * gridH;
+
+    const attachments = [{ minMag: gl.NEAREST }];
+    const fbi = twgl.createFramebufferInfo(gl, attachments, texW, texH);
+    const tex = fbi.attachments[0];
+    return { _type: 'tensor',
+        fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleBias};
+}
+
+function setTensorUniforms(uniforms, name, tensor) {
+    uniforms[name + '.size'] = [tensor.w, tensor.h];
+    uniforms[name + '.gridSize'] = [tensor.gridW, tensor.gridH];
+    uniforms[name + '.depth'] = tensor.depth;
+    uniforms[name + '.depth4'] = tensor.depth4;
+    uniforms[name + '.packScaleBias'] = tensor.packScaleBias;
+    if (name != 'u_output') {
+        uniforms[name + '_tex'] = tensor.tex;
+    }
+}
+
+function createDenseInfo(gl, params) {
+    const coefs = [params.scale, 127.0/255.0];
+    const tex = twgl.createTexture(gl, {
+        minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
+    });
+    const [in_n, out_n] = params.shape;
+    return {tex, coefs, layout: params.layout, in_n: in_n-1, out_n};
+}
+
 
 export function createCA(gl, models, gridSize, gui) {
     gridSize = gridSize || [96, 96];
@@ -264,40 +311,6 @@ export function createCA(gl, models, gridSize, gui) {
     gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
     gui.add(params, 'alignment', {cartesian:0, polar:1, bipolar:2});
 
-    function createPrograms(defines) {
-        defines = defines || '';
-        const res = {};
-        for (const name in PROGRAMS) {
-            const fs_code = defines + PREFIX + PROGRAMS[name];
-            res[name] = twgl.createProgramInfo(gl, [vs_code, fs_code]);
-        }
-        return res;
-    }
-
-    function createTensor(w, h, depth, packScaleBias) {
-        packScaleBias = packScaleBias || [MAX_ACTIVATION*2.0, 127.0/255.0];
-        const depth4 = Math.ceil(depth / 4);
-        const gridW = Math.ceil(Math.sqrt(depth4));
-        const gridH = Math.floor((depth4 + gridW - 1) / gridW);
-        const texW = w * gridW, texH = h * gridH;
-
-        const attachments = [{ minMag: gl.NEAREST }];
-        const fbi = twgl.createFramebufferInfo(gl, attachments, texW, texH);
-        const tex = fbi.attachments[0];
-        return { _type: 'tensor',
-            fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleBias};
-    }
-
-    function setTensorUniforms(uniforms, name, tensor) {
-        uniforms[name + '.size'] = [tensor.w, tensor.h];
-        uniforms[name + '.gridSize'] = [tensor.gridW, tensor.gridH];
-        uniforms[name + '.depth'] = tensor.depth;
-        uniforms[name + '.depth4'] = tensor.depth4;
-        uniforms[name + '.packScaleBias'] = tensor.packScaleBias;
-        if (name != 'u_output') {
-            uniforms[name + '_tex'] = tensor.tex;
-        }
-    }
 
     function runLayer(programName, output, inputs) {
         inputs = inputs || {};
@@ -321,15 +334,6 @@ export function createCA(gl, models, gridSize, gui) {
         return {programName, output}
     }
 
-    function createDenseInfo(params) {
-        const coefs = [params.scale, 127.0/255.0];
-        const tex = twgl.createTexture(gl, {
-            minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
-        });
-        const [in_n, out_n] = params.shape;
-        return {tex, coefs, layout: params.layout, in_n: in_n-1, out_n};
-    }
-
     let layerTex1 = null;
     let layerTex2 = null;
 
@@ -338,13 +342,13 @@ export function createCA(gl, models, gridSize, gui) {
             gl.deleteTexture(layerTex1.tex);
             gl.deleteTexture(layerTex2.tex);
         }
-        layerTex1 = createDenseInfo(models.layers[0]);
-        layerTex2 = createDenseInfo(models.layers[1]);
+        layerTex1 = createDenseInfo(gl, models.layers[0]);
+        layerTex2 = createDenseInfo(gl, models.layers[1]);
     }
     setWeights(models);
 
     const shuffledMode = true;
-    const progs = createPrograms(shuffledMode?'#define SPARSE_UPDATE\n':'');
+    const progs = createPrograms(gl, shuffledMode?'#define SPARSE_UPDATE\n':'');
     const quad = twgl.createBufferInfoFromArrays(gl, {
         position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
     });
@@ -374,12 +378,12 @@ export function createCA(gl, models, gridSize, gui) {
     const perception_n = layerTex1.in_n;
     const hidden_n = layerTex1.out_n;
     const channel_n = layerTex2.out_n;
-    const controlBuf = createTensor(gridW, gridH, 4, [255.0, 0.0]);
-    let stateBuf = createTensor(gridW, gridH, channel_n);
-    let newStateBuf = createTensor(gridW, gridH, channel_n);
-    const perceptionBuf = createTensor(gridW, updateH, perception_n);
-    const hiddenBuf = createTensor(gridW, updateH, hidden_n, [MAX_ACTIVATION, 0.0]); // relu
-    const updateBuf = createTensor(gridW, updateH, channel_n);
+    const controlBuf = createTensor(gl, gridW, gridH, 4, [255.0, 0.0]);
+    let stateBuf = createTensor(gl, gridW, gridH, channel_n);
+    let newStateBuf = createTensor(gl, gridW, gridH, channel_n);
+    const perceptionBuf = createTensor(gl, gridW, updateH, perception_n);
+    const hiddenBuf = createTensor(gl, gridW, updateH, hidden_n, [MAX_ACTIVATION, 0.0]); // relu
+    const updateBuf = createTensor(gl, gridW, updateH, channel_n);
     
     let rotationAngle = 0.0;
     function setAngle(v) {
