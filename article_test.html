@@ -1,0 +1,48 @@
+<d-article>
+%% contents.html
+
+
+
+<h2 id='experiment-ideas'>Experiment ideas:</h2>
+<ul><li>A way to pre-train without an objective (self-supervised/unsupervised)</li></ul>
+<ul><li>Loss that encourages </li></ul>
+<ul><li>3D CAs that get observed by an animal from some perspective - have them learn patterns that work in 2D projection of 3D cell. </li></ul>
+<ul><li>Can they count? Try a loss function that ?counts? the number of objects in the visualization. </li></ul>
+<ul><li>Can they compute physics? Try a loss function that enforces some sort of physical phenomenon. If this homogenous compute works - can we convert this to a kernel in physics?</li></ul>
+
+
+<h2 id='differentiable-texture'>Differentiable Texture SynthesisStyle transfer like objective</h2>
+
+<p>Zebra stripes have a characteristic pattern that almost anyone could recognize and describe, but at the same time it is said that no two zebras have identical stripes. One would then draw the conclusion that evolution has programmed these cells to produce a certain pattern as opposed to programming them with an exact bitmap of stripes to mould over the surface of the Zebra. </p>
+
+<p>We?ve demonstrated the ability for the CA model to almost perfectly recreate any given image. However - suppose we want them to simply approximate a certain ?style? or a pattern, and leave them a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. J As luck would have it, there?s been extensive research on style transfer and feature visualization by exciting or constraining certain intermediate layers of neural networks trained on image tasks, with the go-to network being VGG. Much of this work is summarized and discussed in <u>Differentiable Parametrizations</u>.</p>
+
+<p>Just as in Differentiable Parametrizations, we can employ the beautiful building-block aspect of differentiable models to simply use our Cellular Automata as the parametrization for the image we are trying to constrain to a certain style. </p>
+
+<p>Giving this simple experiment a try - we immediately notice that they produce coherent patterns and are able to learn these in very few steps. </p>
+
+
+<p>Feature viz objective</p>
+
+<p>Just as neuroscientists and biologists have often treated cells, cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there?s a large contemporary body of work on doing the same with neural networks. One of the seminal works in the field - aptly called Deepdream (citation) - creates images to maximize the activation of a given neuron in a neural network, most often an image classifying model. The</p>
+
+<h2 id='hidden-states'>Hidden states</h2>
+<ul><li>Initializing with existing checkpoint dramatically accelerates convergenceLet?s make some </li></ul>
+<ul><li>Leads to a better CA</li></ul>
+
+<h2 id='finetuning-cellular'>Fine-tuning Cellular Automata</h2>
+<ul><li>Initializing with existing checkpoint dramatically accelerates convergence</li></ul>
+<p>Let?s make some </p>
+<ul><li>Leads to a better CA</li></ul>
+<h2 id='cooperating-relatives'>Cooperating Relatives</h2>
+<ul><li>CAs trained starting from the same checkpoint (?relatives?) can interface with each other. </li></ul>
+<ul><li>Experiment interpolation between the parameters of these two </li></ul>
+
+
+
+</d-article>
+<d-appendix>
+
+<d-footnote-list></d-footnote-list>
+<d-citation-list></d-citation-list>
+<d-appendix>
