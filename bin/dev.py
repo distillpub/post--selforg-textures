@@ -18,11 +18,11 @@ def write_file(fname, fout):
             fout.write(s)
 
 def build():
-    os.system('''
-    # src="$(ls -t  ~/Downloads/export*.html | head -1)"
-    # if [ "$src" -nt ../article.html ]; then
-    #     cp -vf "$src" ../article.html
-    # fi
+    os.system('ls')
+    os.system('''curl -o ../article.html \
+     --header 'Authorization: token fa067dbcf4cab3902791f99ebdc5a161b3dcccdc' \
+     --header 'Accept: application/vnd.github.v3.raw' \
+     --location https://api.github.com/repos/znah/post--selforg-textures/contents/article.html \
     ''')
     with open('index.html', 'w') as fout:
       write_file('../main.html', fout)
