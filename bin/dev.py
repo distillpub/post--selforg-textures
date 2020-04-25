@@ -11,6 +11,9 @@ else:
 
 def write_file(fname, fout):
     for s in open(fname):
+        if "___MODELS___" in s:
+            fout.write(s.replace("___MODELS___", str(glob.glob("*.json"))))
+            continue
         if s.startswith('%% '):
             fn = '../'+s.split()[1]
             write_file(fn, fout)
@@ -26,6 +29,8 @@ def build():
     ''')
     with open('index.html', 'w') as fout:
       write_file('../main.html', fout)
+    with open('demo.js', 'w') as fout:
+      write_file('../demo.js', fout)
     print('build finished')
 
 
