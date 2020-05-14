@@ -29,8 +29,6 @@ def build():
     ''')
     with open('index.html', 'w') as fout:
       write_file('../main.html', fout)
-    with open('demo.js', 'w') as fout:
-      write_file('../demo.js', fout)
     print('build finished')
 
 

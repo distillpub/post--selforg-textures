@@ -1,4 +1,4 @@
-import { createCA } from './ca.js'
+import { CA } from './ca.js'
 
 function isInViewport(element) {
   var rect = element.getBoundingClientRect();
@@ -8,7 +8,7 @@ function isInViewport(element) {
   return rect.top < h && rect.left < w && rect.bottom > 0 && rect.right > 0;
 }
 
-export function createDemo(divId) {
+export function createDemo(divId, modelsSet) {
   const root = document.getElementById(divId);
   const $ = q => root.querySelector(q);
   const $$ = q => root.querySelectorAll(q);
@@ -16,7 +16,6 @@ export function createDemo(divId) {
   const W = 256, H = 256;
   let ca = null;
   const modelDir = 'webgl_models8';
-  let target = '🦎';
   let experiment = 'ex3';
   let paused = false;
 
@@ -38,7 +37,7 @@ export function createDemo(divId) {
       gui.destroy();
     }
     gui = new dat.GUI();
-    gui.add(params, 'modelSet', ['models.json', 'models_eyvind.json']).onChange(updateCA);
+    gui.add(params, 'modelSet', modelsSet).onChange(updateCA);
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
     gui.add(params, 'model').options(brush2idx).onChange(() => {
       if (params.autoFill)
@@ -73,9 +72,6 @@ export function createDemo(divId) {
 
 
   function updateUI() {
-    $$('#pattern-selector *').forEach(e => {
-      e.style.opacity = e.id == target ? 1.0 : 0.2;
-    });
     $$('#model-selector input').forEach(e => {
       e.checked = e.id == experiment;
     });
@@ -149,7 +145,7 @@ export function createDemo(divId) {
     const models = await r.json();
     const firstTime = ca == null;
     createGUI(models);
-    ca = createCA(gl, models, [W, H], gui);
+    ca = new CA(gl, models, [W, H], gui);
     ca.paint(0, 0, 10000, 17, [0.5, 0.5]);
 
     window.ca = ca;
@@ -192,12 +188,11 @@ export function createDemo(divId) {
         stepsPerFrame = Math.max(1, stepsPerFrame);
         stepsPerFrame = Math.min(stepsPerFrame, [1, 2, 4, Infinity][speed])
       }
-      ca.setAngle($('#rotation').value);
       for (let i = 0; i < stepsPerFrame; ++i) {
         ca.step();
       }
-      $("#stepCount").innerText = ca.getStepCount();
-      $("#ips").innerText = ca.fps();
+      // $("#stepCount").innerText = ca.getStepCount();
+      // $("#ips").innerText = ca.fps();
     }
     lastDrawTime = time;
 
