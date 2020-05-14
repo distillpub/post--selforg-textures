@@ -231,7 +231,6 @@ const PROGRAMS = {
     }`,
     vis: `
     uniform float u_raw;
-    uniform vec3 u_lastDamage;
     varying vec2 uv;
 
     void main() {
@@ -243,12 +242,6 @@ const PROGRAMS = {
             xy *= u_input.size;
             vec4 rgba = u_input_read(xy, 0.0);
             gl_FragColor = vec4(rgba.rgb/2.0+0.5, 1.0);  //1.0-rgba.a + rgba;
-            vec2 diff = abs(xy-u_lastDamage.xy+0.5);
-            diff = min(diff, u_input.size-diff);
-            if (length(diff) < u_lastDamage.z) {
-                gl_FragColor.rgb *= 0.7;
-                gl_FragColor.rgb += vec3(0.3, 0.3, 0.0);
-            }
         }
     }`
 }
@@ -258,13 +251,15 @@ function createPrograms(gl, defines) {
     const res = {};
     for (const name in PROGRAMS) {
         const fs_code = defines + PREFIX + PROGRAMS[name];
-        res[name] = twgl.createProgramInfo(gl, [vs_code, fs_code]);
+        const progInfo = twgl.createProgramInfo(gl, [vs_code, fs_code]);
+        progInfo.name = name;
+        res[name] = progInfo;
     }
     return res;
 }
 
 function createTensor(gl, w, h, depth, packScaleBias) {
-    packScaleBias = packScaleBias || [MAX_ACTIVATION*2.0, 127.0/255.0];
+    packScaleBias = packScaleBias || [MAX_ACTIVATION * 2.0, 127.0 / 255.0];
     const depth4 = Math.ceil(depth / 4);
     const gridW = Math.ceil(Math.sqrt(depth4));
     const gridH = Math.floor((depth4 + gridW - 1) / gridW);
@@ -273,8 +268,10 @@ function createTensor(gl, w, h, depth, packScaleBias) {
     const attachments = [{ minMag: gl.NEAREST }];
     const fbi = twgl.createFramebufferInfo(gl, attachments, texW, texH);
     const tex = fbi.attachments[0];
-    return { _type: 'tensor',
-        fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleBias};
+    return {
+        _type: 'tensor',
+        fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleBias
+    };
 }
 
 function setTensorUniforms(uniforms, name, tensor) {
@@ -289,30 +286,168 @@ function setTensorUniforms(uniforms, name, tensor) {
 }
 
 function createDenseInfo(gl, params) {
-    const coefs = [params.scale, 127.0/255.0];
+    const coefs = [params.scale, 127.0 / 255.0];
     const tex = twgl.createTexture(gl, {
         minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
     });
     const [in_n, out_n] = params.shape;
-    return {tex, coefs, layout: params.layout, in_n: in_n-1, out_n};
+    return { tex, coefs, layout: params.layout, in_n: in_n - 1, out_n };
 }
 
 
-export function createCA(gl, models, gridSize, gui) {
-    gridSize = gridSize || [96, 96];
-    const [gridW, gridH] = gridSize;
+export class CA {
+    constructor(gl, models, gridSize, gui) {
+        self = this;
+        this.gl = gl;
+        this.gridSize = gridSize || [96, 96];
 
-    const params = {
-        alignment: 1,
-        fuzz: 8.0,
-        visMode: 'color'
-    };
-    gui.add(params, 'fuzz').min(0.0).max(128.0);
-    gui.add(params, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
-    gui.add(params, 'alignment', {cartesian:0, polar:1, bipolar:2});
+        this.updateProbability = 0.5;
+        this.shuffledMode = true;
 
+        this.rotationAngle = 0.0;
+        this.alignment = 1;
+        this.fuzz = 8.0;
+        this.visMode = 'color';
+ 
+        gui.add(this, 'rotationAngle').min(0.0).max(360.0);
+        gui.add(this, 'alignment', { cartesian: 0, polar: 1, bipolar: 2 });
+        gui.add(this, 'fuzz').min(0.0).max(128.0);
+        gui.add(this, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
 
-    function runLayer(programName, output, inputs) {
+        this.layerTex1 = null;
+        this.layerTex2 = null;
+        this.setWeights(models);
+
+        this.progs = createPrograms(gl, this.shuffledMode ? '#define SPARSE_UPDATE\n' : '');
+        this.quad = twgl.createBufferInfoFromArrays(gl, {
+            position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
+        });
+
+        this.setupBuffers();
+        this.setupOps();
+
+        self.runLayer(self.progs.paint, this.buf.state, {
+            u_pos: [0, 0], u_r: 10000,
+            u_brush: [0, 0, 0, 0],
+        });
+    }
+
+    setupBuffers() {
+        const gl = this.gl;
+        const [gridW, gridH] = this.gridSize;
+        const shuffleH = Math.ceil(gridH * this.updateProbability);
+        const shuffleCellN = shuffleH * gridW;
+        const totalCellN = gridW * gridH;
+        const shuffleBuf = new Uint8Array(shuffleCellN * 4);
+        const unshuffleBuf = new Uint8Array(totalCellN * 4);
+        let k = 0;
+        for (let i = 0; i < totalCellN; ++i) {
+            if (Math.random() < (shuffleCellN - k) / (totalCellN - i)) {
+                shuffleBuf[k * 4 + 0] = i % gridW;
+                shuffleBuf[k * 4 + 1] = Math.floor(i / gridW);
+                unshuffleBuf[i * 4 + 0] = k % gridW;
+                unshuffleBuf[i * 4 + 1] = Math.floor(k / gridW);
+                unshuffleBuf[i * 4 + 2] = 255;
+                k += 1;
+            }
+        }
+        this.shuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: shuffleH, src: shuffleBuf });
+        this.unshuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: gridH, src: unshuffleBuf });
+        this.shuffleOfs = [0, 0];
+
+        const updateH = this.shuffledMode ? shuffleH : gridH;
+        const perception_n = this.layerTex1.in_n;
+        const hidden_n = this.layerTex1.out_n;
+        const channel_n = this.layerTex2.out_n;
+        this.buf = {
+            control: createTensor(gl, gridW, gridH, 4, [255.0, 0.0]),
+            state: createTensor(gl, gridW, gridH, channel_n),
+            newState: createTensor(gl, gridW, gridH, channel_n),
+            perception: createTensor(gl, gridW, updateH, perception_n),
+            hidden: createTensor(gl, gridW, updateH, hidden_n, [MAX_ACTIVATION, 0.0]), // relu
+            update: createTensor(gl, gridW, updateH, channel_n),
+        };
+    }
+
+    setupOps() {
+        const [gridW, gridH] = this.gridSize;
+        this.ops = [
+            () => {
+                this.shuffleOfs = [Math.floor(Math.random() * gridW), Math.floor(Math.random() * gridH)];
+                return this.runLayer(self.progs.perception, this.buf.perception, {
+                    u_input: this.buf.state, u_angle: this.rotationAngle / 180.0 * Math.PI,
+                    u_alignment: this.alignment
+                })
+            },
+            () => this.runDense(this.buf.hidden, this.buf.perception, this.layerTex1),
+            () => this.runDense(this.buf.update, this.buf.hidden, this.layerTex2),
+            () => this.runLayer(this.progs.update, this.buf.newState, {
+                u_input: this.buf.state, u_update: this.buf.update,
+                u_unshuffleTex: this.unshuffleTex,
+                u_seed: Math.random() * 1000, u_updateProbability: this.updateProbability
+            }),
+        ];
+    }
+
+    paint(x, y, r, brush) {
+        this.runLayer(this.progs.paint, this.buf.control, {
+            u_pos: [x, y], u_r: r,
+            u_brush: [brush, 0, 0, 0],
+        });
+    }
+
+    benchmark() {
+        const gl = this.gl;
+        const flushBuf = new Uint8Array(4);
+        const flush = buf=>{
+            buf = buf || this.buf.state;
+            // gl.flush/finish don't seem to do anything, so reading a single 
+            // pixel from the state buffer to flush the GPU command pipeline
+            twgl.bindFramebufferInfo(gl, buf.fbi);
+            gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, flushBuf);
+        }
+
+        flush();
+        const stepN = 100;
+        const start = Date.now();
+        for (let i = 0; i < stepN; ++i)
+            this.step();
+        flush();
+        const total = (Date.now() - start) / stepN;
+
+        let perOpTotal = 0.0;
+        const perOp = [];
+        for (const op of this.ops) {
+            const start = Date.now();
+            let r;
+            for (let i = 0; i < stepN; ++i) {
+                r = op();
+            }
+            flush(r.output);
+            const dt = (Date.now() - start) / stepN;
+            perOpTotal += dt
+            perOp.push([r.programName, dt]);
+        }
+        const petOpStr = perOp.map((p) => {
+            const [programName, dt] = p;
+            const percent = 100.0 * dt / perOpTotal;
+            return `${programName}: ${percent.toFixed(1)}%`;
+        }).join(', ');
+        return `${(total).toFixed(2)} ms/step, ${(1000.0 / total).toFixed(2)} step/sec\n` + petOpStr + '\n\n';
+    }
+
+    setWeights(models) {
+        const gl = this.gl;
+        if (this.layerTex1) {
+            gl.deleteTexture(this.layerTex1.tex);
+            gl.deleteTexture(this.layerTex2.tex);
+        }
+        this.layerTex1 = createDenseInfo(gl, models.layers[0]);
+        this.layerTex2 = createDenseInfo(gl, models.layers[1]);
+    }
+
+    runLayer(program, output, inputs) {
+        const gl = this.gl;
         inputs = inputs || {};
         const uniforms = {};
         for (const name in inputs) {
@@ -323,201 +458,44 @@ export function createCA(gl, models, gridSize, gui) {
                 uniforms[name] = val;
             }
         }
+        uniforms['u_shuffleTex'] = this.shuffleTex;
+        uniforms['u_shuffleOfs'] = this.shuffleOfs;
         setTensorUniforms(uniforms, 'u_output', output);
 
-        const program = progs[programName];
         twgl.bindFramebufferInfo(gl, output.fbi);
         gl.useProgram(program.program);
-        twgl.setBuffersAndAttributes(gl, program, quad);
+        twgl.setBuffersAndAttributes(gl, program, this.quad);
         twgl.setUniforms(program, uniforms);
-        twgl.drawBufferInfo(gl, quad);
-        return {programName, output}
+        twgl.drawBufferInfo(gl, this.quad);
+        return { programName: program.name, output }
     }
 
-    let layerTex1 = null;
-    let layerTex2 = null;
-
-    function setWeights(models) {
-        if (layerTex1) {
-            gl.deleteTexture(layerTex1.tex);
-            gl.deleteTexture(layerTex2.tex);
-        }
-        layerTex1 = createDenseInfo(gl, models.layers[0]);
-        layerTex2 = createDenseInfo(gl, models.layers[1]);
-    }
-    setWeights(models);
-
-    const shuffledMode = true;
-    const progs = createPrograms(gl, shuffledMode?'#define SPARSE_UPDATE\n':'');
-    const quad = twgl.createBufferInfoFromArrays(gl, {
-        position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
-    });
-
-    const updateProbability = 0.5;
-    const shuffleH = Math.ceil(gridH * updateProbability);
-    const shuffleCellN = shuffleH*gridW;
-    const totalCellN = gridW*gridH;
-    const shuffleBuf = new Uint8Array(shuffleCellN*4);
-    const unshuffleBuf = new Uint8Array(totalCellN*4);
-    let k=0;
-    for (let i=0; i < totalCellN; ++i) {
-        if (Math.random()<(shuffleCellN-k)/(totalCellN-i)) {
-            shuffleBuf[k*4+0] = i%gridW;
-            shuffleBuf[k*4+1] = Math.floor(i/gridW);
-            unshuffleBuf[i*4+0] = k%gridW;
-            unshuffleBuf[i*4+1] = Math.floor(k/gridW);
-            unshuffleBuf[i*4+2] = 255;
-            k += 1;
-        }
-    }
-    const shuffleTex = twgl.createTexture(gl, {minMag: gl.NEAREST, width: gridW, height: shuffleH, src: shuffleBuf});
-    const unshuffleTex = twgl.createTexture(gl, {minMag: gl.NEAREST, width: gridW, height: gridH, src: unshuffleBuf});
-
-    const updateH = shuffledMode ? shuffleH : gridH;
-    
-    const perception_n = layerTex1.in_n;
-    const hidden_n = layerTex1.out_n;
-    const channel_n = layerTex2.out_n;
-    const controlBuf = createTensor(gl, gridW, gridH, 4, [255.0, 0.0]);
-    let stateBuf = createTensor(gl, gridW, gridH, channel_n);
-    let newStateBuf = createTensor(gl, gridW, gridH, channel_n);
-    const perceptionBuf = createTensor(gl, gridW, updateH, perception_n);
-    const hiddenBuf = createTensor(gl, gridW, updateH, hidden_n, [MAX_ACTIVATION, 0.0]); // relu
-    const updateBuf = createTensor(gl, gridW, updateH, channel_n);
-    
-    let rotationAngle = 0.0;
-    function setAngle(v) {
-      rotationAngle = v/180.0*Math.PI;
-    }
-
-    let shuffleOfs = [0, 0];
-
-    function runDense(output, input, layer) {
-        return runLayer('dense', output, {u_input: input, u_control: controlBuf,
+    runDense(output, input, layer) {
+        return this.runLayer(this.progs.dense, output, {
+            u_input: input, u_control: this.buf.control,
             u_weightTex: layer.tex, u_weightCoefs: layer.coefs, u_layout: layer.layout,
-            u_shuffleTex: shuffleTex, u_shuffleOfs: shuffleOfs,
-            u_seed: Math.random()*1000, u_fuzz: params.fuzz});
-    }
-
-    const ops = [
-        ()=>{
-            shuffleOfs = [Math.floor(Math.random()*gridW), Math.floor(Math.random()*gridH)];
-            return runLayer('perception', perceptionBuf, {
-                u_input: stateBuf, u_angle: rotationAngle, u_shuffleTex: shuffleTex, u_shuffleOfs: shuffleOfs,
-                u_alignment: params.alignment})
-        },
-        ()=>runDense(hiddenBuf, perceptionBuf, layerTex1),
-        ()=>runDense(updateBuf, hiddenBuf, layerTex2),
-        ()=>runLayer('update', newStateBuf, {u_input: stateBuf, u_update: updateBuf, 
-            u_unshuffleTex: unshuffleTex, u_shuffleOfs: shuffleOfs,
-            u_seed: Math.random()*1000, u_updateProbability: updateProbability}),
-    ];
-
-
-    let fpsStartTime;
-    let fpsCount = 0;
-    let lastFpsCount = '';
-    let totalStepCount = 0;
-    function fps() {
-        return lastFpsCount;
-    }
-    function getStepCount() {
-      return totalStepCount;
-    }
-
-    let lastDamage = [0, 0, -1];
-    function paint(x, y, r, brush) {
-        runLayer('paint', controlBuf, {
-            u_pos: [x, y], u_r: r,
-            u_brush: [brush, 0, 0, 0],
+            u_seed: Math.random() * 1000, u_fuzz: this.fuzz
         });
-        // if (brush == 'clear' && r < 1000) {
-        //     lastDamage = [x, y, r]; 
-        // }
-    }
-    function reset() {
-      //paint(0, 0, 10000, 'clear');
-      totalStepCount = 0;
-    }
-    //reset();
-    runLayer('paint', stateBuf, {
-        u_pos: [0, 0], u_r: 10000,
-        u_brush: [0, 0, 0, 0],
-    });
-
-    function step() {
-        for (const op of ops) op();
-        [stateBuf, newStateBuf] = [newStateBuf, stateBuf]
-
-        totalStepCount += 1;
-        fpsCount += 1;
-        let time = Date.now();
-        if (!fpsStartTime)
-            fpsStartTime = time;
-        const fpsInterval = 1000;
-        if (time-fpsStartTime > fpsInterval) {
-            time = Date.now();
-            lastFpsCount = (fpsCount * 1000/(time-fpsStartTime)).toFixed(1);
-            fpsStartTime = time;
-            fpsCount = 0;
-        }
     }
 
-    function draw() {
-        const visMode = params.visMode;
-        gl.useProgram(progs.vis.program);
-        twgl.setBuffersAndAttributes(gl, progs.vis, quad);
-        const uniforms = {u_raw: 0.0, u_lastDamage: lastDamage}
-        lastDamage[2] = Math.max(-0.1, lastDamage[2]-1.0);
-        let inputBuf = stateBuf;
-        if (visMode != 'color') {
-            inputBuf = {stateBuf, perceptionBuf, hiddenBuf, updateBuf}[visMode+'Buf'];
+    step() {
+        for (const op of this.ops) op();
+        [this.buf.state, this.buf.newState] = [this.buf.newState, this.buf.state];
+    }
+
+    draw() {
+        const gl = this.gl;
+
+        gl.useProgram(this.progs.vis.program);
+        twgl.setBuffersAndAttributes(gl, this.progs.vis, this.quad);
+        const uniforms = { u_raw: 0.0 }
+        let inputBuf = this.buf.state;
+        if (this.visMode != 'color') {
+            inputBuf = this.buf[this.visMode];
             uniforms.u_raw = 1.0;
         }
         setTensorUniforms(uniforms, 'u_input', inputBuf);
-        twgl.setUniforms(progs.vis, uniforms);
-        twgl.drawBufferInfo(gl, quad);
+        twgl.setUniforms(this.progs.vis, uniforms);
+        twgl.drawBufferInfo(gl, this.quad);
     }
-
-    const _flushBuf = new Uint8Array(4);
-    function flush(buf) {
-        buf = buf || stateBuf;
-        // gl.flush/finish don't seem to do anything, so reading a single 
-        // pixel from the state buffer to flush the GPU command pipeline
-        twgl.bindFramebufferInfo(gl, buf.fbi);
-        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, _flushBuf);
-    }
-
-    function benchmark() {
-        flush();
-        const stepN = 100;
-        const start = Date.now();
-        for (let i = 0; i < stepN; ++i)
-          step();
-        flush();
-        const total = (Date.now()-start) / stepN;
-
-        let perOpTotal = 0.0;
-        const perOp = [];
-        for (const op of ops) {
-            const start = Date.now();
-            let r;
-            for (let i = 0; i < stepN; ++i) {
-                r = op();
-            }
-            flush(r.output);
-            const dt = (Date.now()-start) / stepN;
-            perOpTotal += dt
-            perOp.push([r.programName, dt]);
-        }
-        const petOpStr = perOp.map((p)=>{
-            const [programName, dt] = p;
-            const percent = 100.0*dt/perOpTotal;
-            return `${programName}: ${percent.toFixed(1)}%`;
-        }).join(', ');
-        return `${(total).toFixed(2)} ms/step, ${(1000.0 / total).toFixed(2)} step/sec\n`+petOpStr+'\n\n';
-    }
-
-    return {reset, step, draw, benchmark, setWeights, paint, gridSize, 
-      fps, flush, getStepCount, setAngle};
 }
