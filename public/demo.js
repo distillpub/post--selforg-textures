@@ -66,7 +66,7 @@ export function createDemo(divId, modelsSet) {
   function click(pos) {
     const [x, y] = pos;
     const [px, py] = prevPos;
-    ca.paint(x, y, params.brushSize, params.model, [x - px, y - py]);
+    ca.clearCircle(x, y, params.brushSize, params.model, [x - px, y - py]);
     prevPos = pos;
   }
 

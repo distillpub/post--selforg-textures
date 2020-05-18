@@ -287,11 +287,14 @@ function setTensorUniforms(uniforms, name, tensor) {
 
 function createDenseInfo(gl, params) {
     const coefs = [params.scale, 127.0 / 255.0];
-    const tex = twgl.createTexture(gl, {
-        minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
-    });
     const [in_n, out_n] = params.shape;
-    return { tex, coefs, layout: params.layout, in_n: in_n - 1, out_n };
+    const info = { coefs, layout: params.layout, in_n: in_n - 1, out_n, ready: false };
+    info.tex = twgl.createTexture(gl, {
+        minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
+    }, ()=>{
+        info.ready = true;
+    });
+    return info;
 }
 
 
@@ -310,7 +313,7 @@ export class CA {
         this.visMode = 'color';
  
         gui.add(this, 'rotationAngle').min(0.0).max(360.0);
-        gui.add(this, 'alignment', { cartesian: 0, polar: 1, bipolar: 2 });
+        gui.add(this, 'alignment', { cartesian: 0, polar: 1, bipolar: 2 }).listen();
         gui.add(this, 'fuzz').min(0.0).max(128.0);
         gui.add(this, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
 
@@ -326,10 +329,7 @@ export class CA {
         this.setupBuffers();
         this.setupOps();
 
-        self.runLayer(self.progs.paint, this.buf.state, {
-            u_pos: [0, 0], u_r: 10000,
-            u_brush: [0, 0, 0, 0],
-        });
+        this.clearCircle(0, 0, 10000);
     }
 
     setupBuffers() {
@@ -391,8 +391,13 @@ export class CA {
 
     paint(x, y, r, brush) {
         this.runLayer(this.progs.paint, this.buf.control, {
-            u_pos: [x, y], u_r: r,
-            u_brush: [brush, 0, 0, 0],
+            u_pos: [x, y], u_r: r, u_brush: [brush, 0, 0, 0],
+        });
+    }
+
+    clearCircle(x, y, r, brush) {
+        self.runLayer(self.progs.paint, this.buf.state, {
+            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0],
         });
     }
 
@@ -479,6 +484,8 @@ export class CA {
     }
 
     step() {
+        if (!this.layerTex1.ready || !this.layerTex2.ready)
+            return;
         for (const op of this.ops) op();
         [this.buf.state, this.buf.newState] = [this.buf.newState, this.buf.state];
     }
