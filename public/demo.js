@@ -29,14 +29,57 @@ export function createDemo(divId, modelsSet) {
     model: 10,
     brushSize: 8,
     autoFill: true,
+    debug: false,
   };
   let gui = null;
+
+  async function initLegend(models) {
+    console.log(models);
+    const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
+    for (const name of models.model_names) {
+
+      // texture.style.backgroundImage = 'url(textures/' + name + '.jpg)';
+      const video = document.createElement('video');
+      video.src = 'textures/' + name + ".mp4";
+      video.poster = 'textures/' + name + ".mp4.jpg";
+      video.autoplay = false;
+      video.playsinline = true;
+      video.muted = true;
+      video.loop = true;
+      video.className = 'texture-video'
+      video.onclick = (() => {
+        console.log(name);
+        ca.paint(0, 0, 10000, brush2idx[name], [0, 0]);
+      })
+
+      const texture = document.createElement('div');
+      texture.id = name; //html5 support arbitrary id:s
+      texture.className = 'texture-square';
+      texture.onmouseover = video.play.bind(video);
+      texture.onmouseout = video.pause.bind(video);
+      texture.addEventListener('touchstart', video.play.bind(video), false);
+      texture.addEventListener('touchend', video.pause.bind(video), false);
+      // const pause = video.pause.bind(video);
+      // texture.onmouseout = (()  => {pause(); video.currentTime = 0;});
+
+      texture.appendChild(video)
+      if (name.startsWith('mixed')){ 
+        $("#inception").appendChild(texture);
+      } else {
+        $('#dtd').appendChild(texture);
+      }
+      console.log(name);
+    }
+  }
 
   function createGUI(models) {
     if (gui != null) {
       gui.destroy();
     }
     gui = new dat.GUI();
+    if (!params.debug) {
+      dat.GUI.toggleHide();
+    }
     gui.add(params, 'modelSet', modelsSet).onChange(updateCA);
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
     gui.add(params, 'model').options(brush2idx).onChange(() => {
@@ -82,23 +125,10 @@ export function createDemo(divId, modelsSet) {
     $('#pause').style.display = !paused ? "inline" : "none";
     const speed = parseInt($('#speed').value);
     $('#speedLabel').innerHTML = ['1/60 x', '1/10 x', '1/2 x', '1x', '2x', '4x', '<b>max</b>'][speed + 3];
-    $("#rotationLabel").innerText = $('#rotation').value + '°';
   }
 
   function initUI() {
     let spriteX = 0;
-    // for (let c of '🦎😀💥👁🐠🦋🐞🕸🥨🎄') {
-    //   const div = document.createElement('div')
-    //   div.id = c;
-    //   div.style.backgroundPositionX = spriteX + 'px';
-    //   div.onclick = ()=>{
-    //     target = c;
-    //     updateModel();
-    //   }
-    //   spriteX -= 40;
-    //   $('#pattern-selector').appendChild(div);
-    // }
-    //$('#reset').onclick = ca.reset;
     $('#play-pause').onclick = () => {
       paused = !paused;
       updateUI();
@@ -111,32 +141,30 @@ export function createDemo(divId, modelsSet) {
     // });
     $('#speed').onchange = updateUI;
     $('#speed').oninput = updateUI;
-    $('#rotation').onchange = updateUI;
-    $('#rotation').oninput = updateUI;
 
 
-    canvas.onmousedown = e => {
-      e.preventDefault();
-      if (e.buttons == 1) {
-        click(getMousePos(e));
-      }
-    }
-    canvas.onmousemove = e => {
-      e.preventDefault();
-      if (e.buttons == 1) {
-        click(getMousePos(e));
-      }
-    }
-    canvas.addEventListener("touchstart", e => {
-      e.preventDefault();
-      click(getTouchPos(e.changedTouches[0]));
-    });
-    canvas.addEventListener("touchmove", e => {
-      e.preventDefault();
-      for (const t of e.touches) {
-        click(getTouchPos(t));
-      }
-    });
+    // canvas.onmousedown = e => {
+    //   e.preventDefault();
+    //   if (e.buttons == 1) {
+    //     click(getMousePos(e));
+    //   }
+    // }
+    // canvas.onmousemove = e => {
+    //   e.preventDefault();
+    //   if (e.buttons == 1) {
+    //     click(getMousePos(e));
+    //   }
+    // }
+    // canvas.addEventListener("touchstart", e => {
+    //   e.preventDefault();
+    //   click(getTouchPos(e.changedTouches[0]));
+    // });
+    // canvas.addEventListener("touchmove", e => {
+    //   e.preventDefault();
+    //   for (const t of e.touches) {
+    //     click(getTouchPos(t));
+    //   }
+    // });
     updateUI();
   }
 
@@ -151,6 +179,7 @@ export function createDemo(divId, modelsSet) {
     window.ca = ca;
     if (firstTime) {
       initUI();
+      initLegend(models);
       requestAnimationFrame(render);
     }
     updateUI();

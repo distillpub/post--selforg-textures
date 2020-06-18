@@ -305,7 +305,7 @@ export class CA {
         this.shuffledMode = true;
 
         this.rotationAngle = 0.0;
-        this.alignment = 1;
+        this.alignment = 0;
         this.fuzz = 8.0;
         this.visMode = 'color';
  

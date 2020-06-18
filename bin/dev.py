@@ -39,6 +39,7 @@ class Handler(SimpleHTTPRequestHandler):
         if six.PY3:
             super().do_GET()
         else:
+            print(self)
             SimpleHTTPRequestHandler.do_GET(self)
 
 if __name__ == '__main__':
