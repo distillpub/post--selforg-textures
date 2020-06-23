@@ -1,19 +1,35 @@
 <d-article>
 %% contents.html
+<h2 id='final-experiments'>Final experiments</h2>
+<ul><li>Tree based structure for </li></ul>
+<h2 id='2505-todo'>25/05 todo:</h2>
+<ul><li>Pull request merge from GitHub - DONE</li></ul>
+<ul><li>Interpolation of weights experiment - </li></ul>
+<ul><li><u>https://colab.research.google.com/drive/148y2wqrzsWitqfecy0OS7l1f9lxjypNd?usp=sharing</u></li></ul>
+<ul><li></li></ul>
+<ul><li>Make wall of images as well as videos - DONE</li></ul>
+<ul><li>Decide header image - I think Mondrian</li></ul>
+<p>29/05 todoL:</p>
+<p>Read article on individuality + article Levin linked</p>
+<p>Shorten article to include texture stuff..</p>
+
 <h2 id='experiment-ideas'>Experiment ideas:</h2>
 <ul><li>A way to pre-train without an objective (self-supervised/unsupervised)</li></ul>
 <ul><li>Loss that encourages </li></ul>
 <ul><li>3D CAs that get observed by an animal from some perspective - have them learn patterns that work in 2D projection of 3D cell. </li></ul>
 <ul><li>Can they count? Try a loss function that “counts” the number of objects in the visualization. </li></ul>
 <ul><li>Can we translate between two types of CAs. </li></ul>
-<ul><li></li></ul>
 <ul><li>Can they compute physics? Try a loss function that enforces some sort of physical phenomenon. If this homogenous compute works - can we convert this to a kernel in physics?</li></ul>
 
 <h2 id='patterns-and'>Patterns and Textures</h2>
 <p></p>
-<p>Zebra stripes have a characteristic pattern anyone can recognize and describe. At the same time it is said that no two zebras have identical stripes. One would then draw the conclusion that evolution has programmed these cells to produce a certain pattern as opposed to programming them with an exact bitmap of stripes to mould the surface of the Zebra’s body.</p>
 
-<p>We’ve demonstrated the ability for the CA model to almost perfectly recreate any given image using a pixel based loss. Suppose we instead want them to simply approximate a certain “style” or a pattern, and leave them a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. As luck would have it, there’s been extensive research on style transfer and feature visualization by constructing input images to excite or constrain certain intermediate layers of neural networks trained on image tasks, with the go-to network being VGG. Much of this work is summarized and discussed in <u>Differentiable Parametrizations</u>.</p>
+<p>Zebra stripes have a characteristic pattern anyone can recognize and describe. At the same time it is said that no two zebras have identical stripes. One would then draw the conclusion that evolution has programmed these cells to generate a certain pattern, with certain characteristics, as opposed to programming them with an exact bitmap of stripes to mould the surface of the Zebra’s body. </p>
+
+<p>Patterns and textures in are intriguing visual features in many ways. One may postulate that a pattern is any repeating set of visual landmarks that lends itself to tiling in some shape or form. But this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of random strands pointing in random directions, with no discernable regularity to the pattern. A standard maze can also be constructed in a way as to be completely non-repeating, but can be still be described as a pattern. </p>
+
+<p>We hope keen readers are convinced of the ability of our CA model to almost perfectly recreate any given image when trained with a pixel based loss - if they not - we encourage them to peruse our seminal article on Growing Cellular Automata.</p>
+<p>Now, suppose we instead want them to simply approximate a certain “style” or a pattern, and leave them a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. As luck would have it, there’s been extensive research on style transfer and feature visualization by constructing input images to excite or constrain certain intermediate layers of neural networks trained on image tasks, with the go-to network being VGG. Much of this work is summarized and discussed in <u>Differentiable Parametrizations</u>.</p>
 
 <p>Just as in Differentiable Parametrizations, we can employ the building-block aspect of differentiable models to plug in our Cellular Automata as the parametrization layer for an image we are trying to constrain to a certain style - having the CAs act as the “renderer”, so to speak, and having a second network, such as VGG, act as a distinguisher of patterns - providing the gradient necessary to produce a pattern of a certain style</p>
 
@@ -23,6 +39,7 @@
 <p>[CLICKABLE INTERACTIVE IMAGE GRAPHIC]</p>
 
 <p>What’s more interesting and not readily apparent in snapshots of batches is that the patterns are in fact not static. Taking a look at the video below, we see all manners of gradual motion. This is not entirely unexpected - in the definition of our experiments we do not place any constraints which individual pixel values should be - instead we just want the overall output to approximate a pattern we chose through our target image. Given the many convolutional layers in VGG, the network likely does not depend much on the exact spatial placement of the pattern, but rather only with its presence.</p>
+
 
 <h2 id='feature-visualization'>Feature Visualization</h2>
 
@@ -35,12 +52,16 @@
 <p>Luckily, we can explore this idea with minimal effort by simply taking our VGG implementation from before and exploring what happens if we are to generate a CA that excites a given neuron. </p>
 
 <p>[EYE GENERATING CA GRAPHIC]</p>
+
+<h2 id='solitons'>Solitons</h2>
+<p>Tasked with re-creating patterns, we see interesting behaviour. </p>
+
 <h2 id='hidden-states'>Hidden states</h2>
 <p>There are various ways to visualize these communication channels - but one of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
 
 <p>As luck would have it - we can do something very similar with our Cellular Automata. Recall that our CA model consists of three visible channels, with the rest being treated as latent channels visible to the update step but excluded from any loss function. . The figure below visualizes the magnitudes of these hidden channels when mapped to intensity in RGB. </p>
 
-<p>We immediately notices several interesting aspects.</p>
+<p>We immediately noticed several interesting aspects.</p>
 
 <p>This means the hidden channels can be considered to be “floating” (to borrow a term from circuits) - they are not being pulled to any specific final state or intermediate state and instead converge to some dynamical system assisting the cell fulfill its “true” objective</p>
 
@@ -48,23 +69,15 @@
 
 <p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or “stiffness” of other cells or even emit different chemical signals to diffuse over the local substrate (citation needed + cleanup for all these). </p>
 
+<p>Visualization</p>
 
-<p>Visualization </p>
 <ul><li>Hidden state analysis yields some interesting results. For instance - certain anomalies in patterns will only appear after some time (eyes) and you can see distinct activity in the regions where they are about to appear. </li></ul>
 <ul><li>Hidden states for automata trained from the same ancestors have similar magnitudes.</li></ul>
 <ul><li>Visualization concept:</li></ul>
-<ul><li>Show hidden state alongside the the RGB state, and highlight the neural activity in the hidden state with a red circle or “highlight” effect (dark overlay + lightened focus)   </li></ul>
-<h2 id='finetuning-cellular'>Fine-tuning Cellular Automata</h2>
-<p>One could theorize that a large part of the training process for our CAs consists of. </p>
+<ul><li>Show hidden state alongside the the RGB state, and highlight the neural activity in the hidden state with a red circle or “highlight” effect (dark overlay + lightened focus)</li></ul>
 
-<ul><li>Initializing with existing checkpoint dramatically accelerates convergence. Let’s make some </li></ul>
-<ul><li>Leads to a better CA</li></ul>
-<h2 id='cooperating-relatives'>Cooperating Relatives</h2>
-
-<ul><li>CAs trained starting from the same checkpoint (“relatives”) can interface with each other. </li></ul>
-<ul><li>Experiment interpolation between the parameters of these two </li></ul>
-
-
+<p>References:</p>
+<ul><li><u>Describing Textures in the Wild</u></li></ul>
 
 </d-article>
 <d-appendix>
