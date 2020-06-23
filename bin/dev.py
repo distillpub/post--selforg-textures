@@ -26,7 +26,7 @@ def build():
         os.system('''curl -o ../article.html \
         --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
         --header 'Accept: application/vnd.github.v3.raw' \
-        --location https://api.github.com/repos/znah/post--selforg-textures/contents/article.html \
+        --location https://api.github.com/repos/$(git remote -v | head -n 1 | sed 's/.*github\.com:\(.*\)\.git.*/\\1/')/contents/article.html \
         ''')
     else:
         print("no api key available")
