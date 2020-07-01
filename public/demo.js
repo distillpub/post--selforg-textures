@@ -25,8 +25,10 @@ export function createDemo(divId, modelsSet) {
   canvas.height = H * 6;
 
   const params = {
-    modelSet: 'models.json',
-    model: 10,
+    modelSet: 'demo/models.json',
+    models: null,
+    model: 35,
+    modelname: "mixed",
     brushSize: 8,
     autoFill: true,
     debug: false,
@@ -36,40 +38,43 @@ export function createDemo(divId, modelsSet) {
   async function initLegend(models) {
     console.log(models);
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
-    for (const name of models.model_names) {
-
-      // texture.style.backgroundImage = 'url(textures/' + name + '.jpg)';
-      const video = document.createElement('video');
-      video.src = 'textures/' + name + ".mp4";
-      video.poster = 'textures/' + name + ".mp4.jpg";
-      video.autoplay = false;
-      video.playsinline = true;
-      video.muted = true;
-      video.loop = true;
-      video.className = 'texture-video'
-      video.onclick = (() => {
-        console.log(name);
-        ca.paint(0, 0, 10000, brush2idx[name], [0, 0]);
-      })
+    const w = Math.ceil(Math.sqrt(models.model_names.length));
+    const h = Math.ceil(models.model_names.length/w);
+    models.model_names.forEach((name, idx, _) => {
 
       const texture = document.createElement('div');
+
+      let x = 100.0*(idx % w)/(w-1);
+      let y = 100.0*Math.floor(idx / w)/(h-1);
+      console.log(x, y);
+      console.log(w, h);
+      texture.style.background = "url('demo/sprites.png') " + x + "% " + y + "%";
+      texture.style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
       texture.id = name; //html5 support arbitrary id:s
       texture.className = 'texture-square';
-      texture.onmouseover = video.play.bind(video);
-      texture.onmouseout = video.pause.bind(video);
-      texture.addEventListener('touchstart', video.play.bind(video), false);
-      texture.addEventListener('touchend', video.pause.bind(video), false);
+      // texture.onmouseover = video.play.bind(video);
+      // texture.onmouseout = video.pause.bind(video);
+      // texture.addEventListener('touchstart', video.play.bind(video), false);
+      // texture.addEventListener('touchend', video.pause.bind(video), false);
+      texture.onclick = (() => {
+        console.log(name);
+        ca.clearCircle(0, 0, 1000);
+        params.model = brush2idx[name];
+        params.modelname = name;
+        ca.paint(0, 0, 10000, brush2idx[name], [0, 0]);
+        updateUI();
+      })
       // const pause = video.pause.bind(video);
       // texture.onmouseout = (()  => {pause(); video.currentTime = 0;});
 
-      texture.appendChild(video)
+      // texture.appendChild(video)
       if (name.startsWith('mixed')){ 
         $("#inception").appendChild(texture);
       } else {
         $('#dtd').appendChild(texture);
       }
       console.log(name);
-    }
+    });
   }
 
   function createGUI(models) {
@@ -123,14 +128,38 @@ export function createDemo(divId, modelsSet) {
     });
     $('#play').style.display = paused ? "inline" : "none";
     $('#pause').style.display = !paused ? "inline" : "none";
+    $('#up').style.display = (ca.alignment == 0) ? "inline" : "none";
+    $('#polar').style.display = (ca.alignment == 1) ? "inline" : "none";
+    $('#bipolar').style.display = (ca.alignment == 2) ? "inline" : "none";
     const speed = parseInt($('#speed').value);
     $('#speedLabel').innerHTML = ['1/60 x', '1/10 x', '1/2 x', '1x', '2x', '4x', '<b>max</b>'][speed + 3];
+    const w = Math.ceil(Math.sqrt(params.models.model_names.length));
+    const h = Math.ceil(params.models.model_names.length/w);
+    let x = 100.0*(params.model % w)/(w-1);
+    let y = 100.0*Math.floor(params.model / w)/(h-1);
+    $("#origtex").style.background = "url('demo/dtd_sprites.png') " + x + "% " + y + "%";
+    $("#origtex").style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
+    if (params.modelname.startsWith('mixed')){
+      $("#texhinttext").innerText = "OpenAI Microscope Rendering" 
+    } else {
+      $("#texhinttext").innerText = "Texture input to VGG"
+    }
   }
 
   function initUI() {
     let spriteX = 0;
     $('#play-pause').onclick = () => {
       paused = !paused;
+      updateUI();
+    };
+
+    $('#reset').onclick = () => {
+      ca.clearCircle(0, 0, 1000);
+      ca.paint(0, 0, 10000, params.model, [0, 0]);
+    };
+
+    $('#vfield').onclick = () => {
+      ca.alignment = (ca.alignment + 1) % 3; 
       updateUI();
     };
     // $$('#model-selector input').forEach(sel=>{
@@ -171,10 +200,11 @@ export function createDemo(divId, modelsSet) {
   async function updateCA() {
     const r = await fetch(params.modelSet);
     const models = await r.json();
+    params.models = models;
     const firstTime = ca == null;
     createGUI(models);
     ca = new CA(gl, models, [W, H], gui);
-    ca.paint(0, 0, 10000, 17, [0.5, 0.5]);
+    ca.paint(0, 0, 10000, params.model, [0.5, 0.5]);
 
     window.ca = ca;
     if (firstTime) {
