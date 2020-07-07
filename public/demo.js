@@ -91,6 +91,7 @@ export function createDemo(divId, modelsSet) {
       if (params.autoFill)
         ca.paint(0, 0, 10000, params.model, [0, 0]);
     });
+    params.modelname = models.model_names[params.model];
     gui.add(params, 'autoFill')
     gui.add(params, 'brushSize').min(1).max(32).step(1);
   }
@@ -140,9 +141,17 @@ export function createDemo(divId, modelsSet) {
     $("#origtex").style.background = "url('demo/dtd_sprites.png') " + x + "% " + y + "%";
     $("#origtex").style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
     if (params.modelname.startsWith('mixed')){
-      $("#texhinttext").innerText = "OpenAI Microscope Rendering" 
+      let oai = document.createElement('a')
+      oai.innerHTML = params.modelname + " (OpenAI Microscope)"
+      oai.href = "https://microscope.openai.com/models/inceptionv1/" + params.modelname.substring(0,8) + "0/" + params.modelname.substring(8)
+      $("#texhinttext").innerHTML = '';
+      $("#texhinttext").appendChild(oai);
     } else {
-      $("#texhinttext").innerText = "Texture input to VGG"
+      let dtd = document.createElement('a')
+      dtd.innerHTML = params.modelname + " (DTD)"
+      dtd.href = "https://www.robots.ox.ac.uk/~vgg/data/dtd/"
+      $("#texhinttext").innerHTML = '';
+      $("#texhinttext").appendChild(dtd);
     }
   }
 
