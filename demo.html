@@ -67,9 +67,7 @@
     margin: 2px;
     cursor: pointer;
 }
-#model-selector {
-    line-height: 1.4em;
-}
+
 #demo-tip{
     display: grid;
     grid-template-columns: 40px auto;
@@ -332,6 +330,20 @@ input[type="radio"] {
   text-align: center;
   line-height: 2em;
 }
+
+#vectorfield{
+  /*float: left;*/
+  position: absolute;
+  /*display: inline-block;*/
+  /*width: 50%;*/
+  text-align: left;
+  line-height: 1.4em;
+  margin: 0;
+}
+
+#speed {
+  width: 50%;
+}
 </style>
 
 <div class="l-body-outset grid" id="demo">
@@ -339,18 +351,26 @@ input[type="radio"] {
     <canvas id="demo-canvas" width="512" height="512"></canvas>
 
     <div id="controller">
-      <span id="play-pause">
+      
+<!--       <span id="vfield">
+        <svg class="icon" id="up"><use xlink:href="#upIcon"></use></svg>
+        <svg class="icon" id="polar" style="display: none;"><use xlink:href="#polarIcon"></use></svg>
+        <svg class="icon" id="bipolar" style="display: none;"><use xlink:href="#bipolarIcon"></use></svg>
+      </span> -->
+      <div id="vectorfield">
+            Cell alignment:<br>
+            <input type="radio" name="model" id="1"> <label for="1">Vertical</label><br>
+            <input type="radio" name="model" id="2"> <label for="2">Polar</label><br>
+            <input type="radio" name="model" id="3"> <label for="3">Bi-Polar</label><br>        
+        </div>
+        <span id="play-pause">
           <svg class="icon" id="play"><use xlink:href="#playIcon"></use></svg>
           <svg class="icon" id="pause" style="display: none;"><use xlink:href="#pauseIcon"></use></svg>
       </span>
       <svg class="icon" id="reset"><use xlink:href="#resetIcon"></use></svg>
-      <span id="vfield">
-        <svg class="icon" id="up"><use xlink:href="#upIcon"></use></svg>
-        <svg class="icon" id="polar" style="display: none;"><use xlink:href="#polarIcon"></use></svg>
-        <svg class="icon" id="bipolar" style="display: none;"><use xlink:href="#bipolarIcon"></use></svg>
-      </span>
-            </br> Speed: <span id="speedLabel"></span><br>
-      <input type="range" id="speed" min="-3" max="3" step="1" value="0"><br>
+            <!-- </br> Speed: <span id="speedLabel"></span> -->
+          </br >
+      <input type="range" id="speed" min="-3" max="3" step="1" value="0"></br >Speed: <label id="speedLabel"></label><br>
       <div id="status"><!-- 
           Step <span id="stepCount"></span>
           (<span id="ips"></span> step/s) -->
@@ -367,9 +387,7 @@ input[type="radio"] {
           <span>Inception</span>
         </div>
         <div id="inception" class="pattern-selector">
-        </div>
-        <div id="texhint">
-          <div id="origtex">
+        </div><div id="texhint"><div id="origtex">
           </div>
           <span id="texhinttext"></span>
         </div>

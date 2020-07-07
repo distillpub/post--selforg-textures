@@ -75,6 +75,8 @@ export function createDemo(divId, modelsSet) {
       }
       console.log(name);
     });
+
+
   }
 
   function createGUI(models) {
@@ -129,9 +131,7 @@ export function createDemo(divId, modelsSet) {
     });
     $('#play').style.display = paused ? "inline" : "none";
     $('#pause').style.display = !paused ? "inline" : "none";
-    $('#up').style.display = (ca.alignment == 0) ? "inline" : "none";
-    $('#polar').style.display = (ca.alignment == 1) ? "inline" : "none";
-    $('#bipolar').style.display = (ca.alignment == 2) ? "inline" : "none";
+
     const speed = parseInt($('#speed').value);
     $('#speedLabel').innerHTML = ['1/60 x', '1/10 x', '1/2 x', '1x', '2x', '4x', '<b>max</b>'][speed + 3];
     const w = Math.ceil(Math.sqrt(params.models.model_names.length));
@@ -167,16 +167,23 @@ export function createDemo(divId, modelsSet) {
       ca.paint(0, 0, 10000, params.model, [0, 0]);
     };
 
-    $('#vfield').onclick = () => {
-      ca.alignment = (ca.alignment + 1) % 3; 
-      updateUI();
-    };
+    // $('#vfield').onclick = () => {
+    //   ca.alignment = (ca.alignment + 1) % 3; 
+    //   updateUI();
+    // };
     // $$('#model-selector input').forEach(sel=>{
     //   sel.onchange = ()=>{
     //     experiment = sel.id;
     //     updateModel();
     //   }
     // });
+    $$('#vectorfield input').forEach(sel=>{
+      sel.onchange = () => {
+        console.log(ca.alignment);
+        ca.alignment = sel.id;
+        updateUI();
+      }
+    });
     $('#speed').onchange = updateUI;
     $('#speed').oninput = updateUI;
 
