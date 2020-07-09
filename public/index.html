@@ -573,6 +573,11 @@ input[type="radio"] {
 #speed {
   width: 50%;
 }
+
+
+#rotation {
+  width: 50%;
+}
 </style>
 
 <div class="l-body-outset grid" id="demo">
@@ -600,6 +605,8 @@ input[type="radio"] {
             <!-- </br> Speed: <span id="speedLabel"></span> -->
           </br >
       <input type="range" id="speed" min="-3" max="3" step="1" value="0"></br >Speed: <label id="speedLabel"></label><br>
+       </br >
+      <input type="range" id="rotation" min="0" max="360" step="1" value="0"></br >Rotation: <label id="rotationLabel"></label><br>
       <div id="status"><!-- 
           Step <span id="stepCount"></span>
           (<span id="ips"></span> step/s) -->

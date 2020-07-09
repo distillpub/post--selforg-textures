@@ -31,7 +31,7 @@ export function createDemo(divId, modelsSet) {
     modelname: "mixed",
     brushSize: 8,
     autoFill: true,
-    debug: false,
+    debug: true,
   };
   let gui = null;
 
@@ -134,6 +134,8 @@ export function createDemo(divId, modelsSet) {
 
     const speed = parseInt($('#speed').value);
     $('#speedLabel').innerHTML = ['1/60 x', '1/10 x', '1/2 x', '1x', '2x', '4x', '<b>max</b>'][speed + 3];
+    ca.rotationAngle = parseInt($('#rotation').value);
+    $('#rotationLabel').innerHTML = ca.rotationAngle + " deg";
     const w = Math.ceil(Math.sqrt(params.models.model_names.length));
     const h = Math.ceil(params.models.model_names.length/w);
     let x = 100.0*(params.model % w)/(w-1);
@@ -186,6 +188,8 @@ export function createDemo(divId, modelsSet) {
     });
     $('#speed').onchange = updateUI;
     $('#speed').oninput = updateUI;
+    $('#rotation').onchange = updateUI;
+    $('#rotation').oninput = updateUI;
 
 
     // canvas.onmousedown = e => {
