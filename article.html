@@ -5,7 +5,7 @@
 
 <p>Zebra stripes have a characteristic pattern anyone can recognize and describe. At the same time it is said that no two zebras have identical stripes. One would then draw the conclusion that evolution has programmed these cells to generate a certain pattern, with certain characteristics, as opposed to programming them with an exact bitmap of stripes to mould the surface of the Zebra’s body. </p>
 
-<p>Patterns and textures in are intriguing visual features in many ways. One may postulate that a pattern is any repeating set of visual landmarks that lends itself to tiling in some shape or form. But this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of random strands pointing in random directions, with no discernable regularity to the pattern. A standard maze can also be constructed in a way as to be completely non-repeating, but can be still be described as a pattern. </p>
+<p>Patterns and textures are intriguing visual features in many ways. One may postulate that a pattern is any repeating set of visual landmarks that lends itself to tiling in some shape or form. But this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of random strands pointing in random directions, with no discernable regularity to the pattern. A standard maze can also be constructed in a way as to be completely non-repeating, but can be still be described as a pattern. </p>
 
 <p>We hope keen readers are convinced of the ability of our CA model to almost perfectly recreate any given image when trained with a pixel based loss - if they not - we encourage them to peruse our seminal article on Growing Cellular Automata.</p>
 <p>Now, suppose we instead want them to simply approximate a certain “style” or a pattern, and leave them a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. As luck would have it, there’s been extensive research on style transfer and feature visualization by constructing input images to excite or constrain certain intermediate layers of neural networks trained on image tasks, with the go-to network being VGG. Much of this work is summarized and discussed in <u>Differentiable Parametrizations</u>.</p>
@@ -32,9 +32,25 @@
 
 <p>[EYE GENERATING CA GRAPHIC]</p>
 
-<h2 id='solitons'>Solitons</h2>
-<p>Tasked with re-creating patterns, we see interesting behaviour. </p>
+<p>[TODO: diagram similar to diff param]</p>
+<h2 id='solitons-lenia'>Solitons, Lenia, and Smoothlife</h2>
+<p>The motion of waves propagating through a medium can be described using the “classical” wave equation. </p>
 
+<p>[todo: insert latex wave-eq] </p>
+
+<p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies - a phenomenon referred to as a “group” or a “packet”. Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe real-world waves, such as waves in water, light waves propagating, or sound, we have somewhat more complex partial differential equations governing their motion. These waves all share a common property - that waves of different frequencies will travel at different speeds. “Speed” in such a context is a tricky thing to define - however in this case we are referring to the speed of any single given wave - how fast its peak travels in space. When waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience “dispersion” - the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a “soliton” - as it describes a wave packet which exactly retains its shape during propagation.</p>
+
+<p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render from DTD, or even in inception, consist of well defined structures such as circles (link polka dot or eyes) or polygons (link bee-hive). We consider such structures to be functionally equivalent to solitons in the world of waves and refer to them as such. Solitons are also used to describe the structures found in “Lenia” by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.</p>
+
+<p>In the case of pattern generation with CAs, the most curious aspect of the resulting CA is how it tends to find a solution to generating the pattern that is often similar to the actual physical generative rule for such a pattern. This concept is somewhat ill defined and hard to quantitatively measure, but we will attempt to demonstrate the idea through a number of examples. </p>
+
+<h2 id='interesting-properties'>Interesting properties of solitons and their interactions.</h2>
+
+<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite common ly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li></ul>
+
+<ul><li>Solitons can “divide” into two</li></ul>
+<ul><li></li></ul>
+<ul><li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when</li></ul>
 <h2 id='hidden-states'>Hidden states</h2>
 <p>There are various ways to visualize these communication channels - but one of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
 
