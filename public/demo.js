@@ -29,9 +29,9 @@ export function createDemo(divId, modelsSet) {
     models: null,
     model: 35,
     modelname: "mixed",
-    brushSize: 8,
+    brushSize: 20,
     autoFill: true,
-    debug: true,
+    debug: false,
   };
   let gui = null;
 
@@ -117,7 +117,8 @@ export function createDemo(divId, modelsSet) {
   function click(pos) {
     const [x, y] = pos;
     const [px, py] = prevPos;
-    ca.paint(x, y, params.brushSize, params.model, [x - px, y - py]);
+    ca.clearCircle(x, y, params.brushSize);
+    // ca.paint(x, y, params.brushSize, params.model, [x - px, y - py]);
     prevPos = pos;
   }
 
@@ -192,28 +193,28 @@ export function createDemo(divId, modelsSet) {
     $('#rotation').oninput = updateUI;
 
 
-    // canvas.onmousedown = e => {
-    //   e.preventDefault();
-    //   if (e.buttons == 1) {
-    //     click(getMousePos(e));
-    //   }
-    // }
-    // canvas.onmousemove = e => {
-    //   e.preventDefault();
-    //   if (e.buttons == 1) {
-    //     click(getMousePos(e));
-    //   }
-    // }
-    // canvas.addEventListener("touchstart", e => {
-    //   e.preventDefault();
-    //   click(getTouchPos(e.changedTouches[0]));
-    // });
-    // canvas.addEventListener("touchmove", e => {
-    //   e.preventDefault();
-    //   for (const t of e.touches) {
-    //     click(getTouchPos(t));
-    //   }
-    // });
+    canvas.onmousedown = e => {
+      e.preventDefault();
+      if (e.buttons == 1) {
+        click(getMousePos(e));
+      }
+    }
+    canvas.onmousemove = e => {
+      e.preventDefault();
+      if (e.buttons == 1) {
+        click(getMousePos(e));
+      }
+    }
+    canvas.addEventListener("touchstart", e => {
+      e.preventDefault();
+      click(getTouchPos(e.changedTouches[0]));
+    });
+    canvas.addEventListener("touchmove", e => {
+      e.preventDefault();
+      for (const t of e.touches) {
+        click(getTouchPos(t));
+      }
+    });
     updateUI();
   }
 
