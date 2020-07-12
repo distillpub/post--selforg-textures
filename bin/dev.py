@@ -22,7 +22,7 @@ def write_file(fname, fout):
 
 def build():
     if os.environ.get("GIT_API_KEY_SELFORG") is not None:
-	print("using api key in environment")
+        print("using api key in environment")
         os.system('''curl -o ../article.html \
         --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
         --header 'Accept: application/vnd.github.v3.raw' \
