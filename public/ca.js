@@ -12,7 +12,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const MAX_ACTIVATION = 2.0
+/*
+Usage:
+  const gui = new dat.GUI();
+  const ca = new CA(gl, models_json, [W, H], gui); // gui is optional
+  ca.step();
+  
+  ca.paint(x, y, radius, modelIndex);
+  ca.clearCircle(x, y, radius;
+
+  const stats = ca.benchmark();
+  ca.draw();
+  ca.draw(zoom);
+*/
 
 const vs_code = `
     attribute vec4 position;
@@ -29,6 +41,7 @@ function defInput(name) {
         uniform sampler2D ${name}_tex;
 
         vec4 ${name}_read(vec2 pos, float ch) {return _read(${name}, ${name}_tex, pos, ch);}
+        vec4 ${name}_read01(vec2 pos, float ch) {return _read01(${name}, ${name}_tex, pos, ch);}
         vec4 ${name}_readUV(vec2 uv) {return _readUV(${name}, ${name}_tex, uv);}
     `
 }
@@ -53,13 +66,13 @@ const PREFIX = `
         vec2 size;
         vec2 gridSize;
         float depth, depth4;
-        vec2 packScaleBias;
+        vec2 packScaleZero;
     };
     uniform Tensor u_output;
-          
+
     vec4 _readUV(Tensor tensor, sampler2D tex, vec2 uv) {
         vec4 v = texture2D(tex, uv);
-        vec2 p = tensor.packScaleBias;
+        vec2 p = tensor.packScaleZero;
         v = (v-p.y)*p.x;
         return v;
     }
@@ -70,6 +83,9 @@ const PREFIX = `
         vec2 p = fract(pos/tensor.size) + vec2(tx, ty);
         p /= tensor.gridSize;
         return p;
+    }
+    vec4 _read01(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
+        return texture2D(tex, _getUV(tensor, pos, ch));
     }
     vec4 _read(Tensor tensor, sampler2D tex, vec2 pos, float ch) {
         vec2 p = _getUV(tensor, pos, ch);
@@ -84,7 +100,7 @@ const PREFIX = `
     }
 
     void setOutput(vec4 v) {
-        vec2 p = u_output.packScaleBias;
+        vec2 p = u_output.packScaleZero;
         v = v/p.x + p.y;
         gl_FragColor = v;
     }
@@ -95,6 +111,26 @@ const PREFIX = `
     #endif
 
     ${defInput('u_input')}
+
+    uniform float u_angle, u_alignment;
+    
+    mat2 rotate(float ang) {
+        float s = sin(ang), c = cos(ang);
+        return mat2(c, s, -s, c);
+    }
+
+    vec2 getCellDirection(vec2 xy) {
+        vec2 dir = vec2(0.0, 1.0);
+        if (u_alignment == 1.0) {
+            dir = normalize(xy-0.5*u_input.size);
+        } else if (u_alignment == 2.0) {
+            vec2 v1 = xy-0.25*u_input.size;
+            vec2 v2 = 0.75*u_input.size-xy;
+            dir = normalize(v1/pow(length(v1), 3.0) +  v2/pow(length(v2), 3.0));
+        }
+        dir = rotate(u_angle) * dir;
+        return dir;
+    }
 `;
 
 const PROGRAMS = {
@@ -111,15 +147,9 @@ const PROGRAMS = {
         setOutput(u_brush);
     }`,
     perception: `
-    uniform float u_angle, u_alignment;
     const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
     const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
     const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
-
-    mat2 rotate(float ang) {
-        float s = sin(ang), c=cos(ang);
-        return mat2(c, s, -s, c);
-    }
 
     vec4 conv3x3(vec2 xy, float inputCh, mat3 filter) {
         vec4 a = vec4(0.0);
@@ -148,15 +178,7 @@ const PROGRAMS = {
         } else if (filterBand < 2.5) {
             vec4 dx = conv3x3(xy, inputCh, sobelX);
             vec4 dy = conv3x3(xy, inputCh, sobelY);
-            vec2 dir = vec2(0.0, 1.0);
-            if (u_alignment == 1.0) {
-                dir = normalize(xy-0.5*u_input.size);
-            } else if (u_alignment == 2.0) {
-                vec2 v1 = xy-0.25*u_input.size;
-                vec2 v2 = 0.75*u_input.size-xy;
-                dir = normalize(v1/pow(length(v1), 3.0) +  v2/pow(length(v2), 3.0));
-            }
-            dir = rotate(u_angle) * dir;
+            vec2 dir = getCellDirection(xy);
             float s = dir.x, c = dir.y;
             setOutput(filterBand < 1.5 ? dx*c-dy*s : dx*s+dy*c);
         } else {
@@ -191,7 +213,9 @@ const PROGRAMS = {
       #ifdef SPARSE_UPDATE
         realXY = texture2D(u_shuffleTex, xy/u_output.size).xy*255.0+0.5 + u_shuffleOfs;
       #endif
-      p += u_control_read(realXY+fuzz, 0.0).xy;
+      float modelIdx = u_control_read(realXY+fuzz, 0.0).x+0.5;
+      p.x += floor(mod(modelIdx, u_layout.x));
+      p.y += floor(modelIdx/u_layout.x);
       p /= u_layout;
       vec4 result = vec4(0.0);
       for (float i=0.0; i < MAX_PACKED_DEPTH; i+=1.0) {
@@ -231,7 +255,43 @@ const PROGRAMS = {
     }`,
     vis: `
     uniform float u_raw;
+    uniform float u_zoom;
+    uniform float u_perceptionCircle, u_arrows;
     varying vec2 uv;
+
+    float clip01(float x) {
+        return min(max(x, 0.0), 1.0);
+    }
+
+    const float PI = 3.141592653;
+
+    float peak(float x, float r) {
+        float y = x/r;
+        return exp(-y*y);
+    }
+
+    float getElement(vec4 v, float i) {
+        if (i<1.0) return v.x;
+        if (i<2.0) return v.y;
+        if (i<3.0) return v.z;
+        return v.w;
+    }
+
+    vec3 onehot3(float i) {
+        if (i<1.0) return vec3(1.0, 0.0, 0.0);
+        if (i<2.0) return vec3(0.0, 1.0, 0.0);
+        return vec3(0.0, 0.0, 1.0);
+    }
+
+    float sdTriangleIsosceles( in vec2 p, in vec2 q ) {
+        p.x = abs(p.x);
+        vec2 a = p - q*clamp( dot(p,q)/dot(q,q), 0.0, 1.0 );
+        vec2 b = p - q*vec2( clamp( p.x/q.x, 0.0, 1.0 ), 1.0 );
+        float s = -sign( q.y );
+        vec2 d = min( vec2( dot(a,a), s*(p.x*q.y-p.y*q.x) ),
+                      vec2( dot(b,b), s*(p.y-q.y)  ));
+        return -sqrt(d.x)*sign(d.y);
+    }
 
     void main() {
         vec2 xy = vec2(uv.x, 1.0-uv.y);
@@ -239,9 +299,52 @@ const PROGRAMS = {
             gl_FragColor = texture2D(u_input_tex, xy);
             gl_FragColor.a = 1.0;
         } else {
+            xy = (xy + vec2(0.5)*(u_zoom-1.0))/u_zoom;
             xy *= u_input.size;
-            vec4 rgba = u_input_read(xy, 0.0);
-            gl_FragColor = vec4(rgba.rgb/2.0+0.5, 1.0);  //1.0-rgba.a + rgba;
+
+            vec3 cellRGB = u_input_read(xy, 0.0).rgb/2.0+0.5;
+            vec3 rgb = cellRGB;
+            if (4.0 < u_zoom) {
+                vec2 fp = (mod(xy, 1.0)-vec2(0.5))*2.0;
+                vec2 dir = getCellDirection(floor(xy)+0.5);
+                float s = dir.x, c = dir.y;
+                fp = mat2(c, s, -s, c) * fp;    
+                float r = length(fp);
+                float fade = clip01((u_zoom-4.0)/4.0);
+                float m = 1.0-min(r*r*r, 1.0)*fade;
+                rgb *= m;
+                if (12.0 < u_zoom) {
+                    float ang = atan(-fp.x, fp.y)/(2.0*PI)+0.5;
+                    float ch = mod(ang*u_input.depth+1.5, u_input.depth);
+                    float barLengh = 0.0;
+                    vec3 barColor = vec3(0.5);
+                    if (ch < 3.0) {
+                        vec3 i3 = onehot3(ch);
+                        barColor = i3;
+                        barLengh = dot(cellRGB, i3);
+                    } else {
+                        vec4 v4 = u_input_read01(xy, floor(ch/4.0));
+                        barLengh = getElement(v4, mod(ch, 4.0));
+                    }
+
+                    float c = mod(ch, 1.0);
+                    c = peak(c-0.5, 0.2);
+                    if (r>barLengh)
+                      c = 0.0;
+                    float fade = clip01((u_zoom-12.0)/8.0);
+                    c *= fade;
+                    rgb += barColor*c;
+
+                    float arrow = sdTriangleIsosceles((fp+vec2(0.0, 0.95))*vec2(4.0, 4.0), vec2(1.0, 1.0));
+                    arrow = clip01(1.0-abs(arrow)*u_zoom/4.0);
+                    rgb += arrow*fade*u_arrows;
+
+                    float cr = length(u_input.size/2.0-0.5-xy);
+                    rgb += peak(cr-1.5, 0.5/u_zoom)*fade*u_perceptionCircle;
+                }
+            } 
+
+            gl_FragColor = vec4(rgb, 1.0);
         }
     }`
 }
@@ -258,8 +361,7 @@ function createPrograms(gl, defines) {
     return res;
 }
 
-function createTensor(gl, w, h, depth, packScaleBias) {
-    packScaleBias = packScaleBias || [MAX_ACTIVATION * 2.0, 127.0 / 255.0];
+function createTensor(gl, w, h, depth, packScaleZero) {
     const depth4 = Math.ceil(depth / 4);
     const gridW = Math.ceil(Math.sqrt(depth4));
     const gridH = Math.floor((depth4 + gridW - 1) / gridW);
@@ -270,7 +372,7 @@ function createTensor(gl, w, h, depth, packScaleBias) {
     const tex = fbi.attachments[0];
     return {
         _type: 'tensor',
-        fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleBias
+        fbi, w, h, depth, gridW, gridH, depth4, tex, packScaleZero
     };
 }
 
@@ -279,7 +381,7 @@ function setTensorUniforms(uniforms, name, tensor) {
     uniforms[name + '.gridSize'] = [tensor.gridW, tensor.gridH];
     uniforms[name + '.depth'] = tensor.depth;
     uniforms[name + '.depth4'] = tensor.depth4;
-    uniforms[name + '.packScaleBias'] = tensor.packScaleBias;
+    uniforms[name + '.packScaleZero'] = tensor.packScaleZero;
     if (name != 'u_output') {
         uniforms[name + '_tex'] = tensor.tex;
     }
@@ -288,7 +390,8 @@ function setTensorUniforms(uniforms, name, tensor) {
 function createDenseInfo(gl, params) {
     const coefs = [params.scale, 127.0 / 255.0];
     const [in_n, out_n] = params.shape;
-    const info = { coefs, layout: params.layout, in_n: in_n - 1, out_n, ready: false };
+    const info = { coefs, layout: params.layout, in_n: in_n - 1, out_n,
+        quantScaleZero: params.quant_scale_zero, ready: false };
     info.tex = twgl.createTexture(gl, {
         minMag: gl.NEAREST, src: params.data, flipY: false, premultiplyAlpha: false,
     }, ()=>{
@@ -296,7 +399,6 @@ function createDenseInfo(gl, params) {
     });
     return info;
 }
-
 
 export class CA {
     constructor(gl, models, gridSize, gui) {
@@ -308,17 +410,13 @@ export class CA {
         this.shuffledMode = true;
 
         this.rotationAngle = 0.0;
-        this.alignment = 1;
+        this.alignment = 0;
         this.fuzz = 8.0;
+        this.perceptionCircle = 0.0;
+        this.arrowsCoef = 0.0;
         this.visMode = 'color';
  
-        gui.add(this, 'rotationAngle').min(0.0).max(360.0);
-        gui.add(this, 'alignment', { cartesian: 0, polar: 1, bipolar: 2 }).listen();
-        gui.add(this, 'fuzz').min(0.0).max(128.0);
-        gui.add(this, 'visMode', ['color', 'state', 'perception', 'hidden', 'update']);
-
-        this.layerTex1 = null;
-        this.layerTex2 = null;
+        this.layers = [];
         this.setWeights(models);
 
         this.progs = createPrograms(gl, this.shuffledMode ? '#define SPARSE_UPDATE\n' : '');
@@ -327,7 +425,16 @@ export class CA {
         });
 
         this.setupBuffers();
-        this.setupOps();
+        const visNames = Object.getOwnPropertyNames(this.buf);
+        visNames.push('color');
+
+        if (gui) {
+            gui.add(this, 'rotationAngle').min(0.0).max(360.0);
+            gui.add(this, 'alignment', { cartesian: 0, polar: 1, bipolar: 2 }).listen();
+            gui.add(this, 'fuzz').min(0.0).max(128.0);
+            gui.add(this, 'perceptionCircle').min(0.0).max(1.0);
+            gui.add(this, 'visMode', visNames);
+        }
 
         this.clearCircle(0, 0, 10000);
     }
@@ -350,55 +457,61 @@ export class CA {
                 unshuffleBuf[i * 4 + 2] = 255;
                 k += 1;
             }
-        }
-        this.shuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: shuffleH, src: shuffleBuf });
-        this.unshuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: gridH, src: unshuffleBuf });
+        }        
+        this.shuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: shuffleH, src: shuffleBuf});
+        this.unshuffleTex = twgl.createTexture(gl, { minMag: gl.NEAREST, width: gridW, height: gridH, src: unshuffleBuf});
         this.shuffleOfs = [0, 0];
 
         const updateH = this.shuffledMode ? shuffleH : gridH;
-        const perception_n = this.layerTex1.in_n;
-        const hidden_n = this.layerTex1.out_n;
-        const channel_n = this.layerTex2.out_n;
+        const perception_n = this.layers[0].in_n;
+        const lastLayer = this.layers[this.layers.length-1];
+        const channel_n = lastLayer.out_n;
+        const stateQuantization = lastLayer.quantScaleZero;
         this.buf = {
             control: createTensor(gl, gridW, gridH, 4, [255.0, 0.0]),
-            state: createTensor(gl, gridW, gridH, channel_n),
-            newState: createTensor(gl, gridW, gridH, channel_n),
-            perception: createTensor(gl, gridW, updateH, perception_n),
-            hidden: createTensor(gl, gridW, updateH, hidden_n, [MAX_ACTIVATION, 0.0]), // relu
-            update: createTensor(gl, gridW, updateH, channel_n),
+            state: createTensor(gl, gridW, gridH, channel_n, stateQuantization),
+            newState: createTensor(gl, gridW, gridH, channel_n, stateQuantization),
+            perception: createTensor(gl, gridW, updateH, perception_n, stateQuantization),
         };
+        for (let i=0; i<this.layers.length; ++i) {
+            const layer = this.layers[i];
+            this.buf[`layer${i}`] = createTensor(gl, gridW, updateH, layer.out_n, layer.quantScaleZero);
+        }
     }
 
-    setupOps() {
-        const [gridW, gridH] = this.gridSize;
-        this.ops = [
-            () => {
-                this.shuffleOfs = [Math.floor(Math.random() * gridW), Math.floor(Math.random() * gridH)];
-                return this.runLayer(self.progs.perception, this.buf.perception, {
-                    u_input: this.buf.state, u_angle: this.rotationAngle / 180.0 * Math.PI,
-                    u_alignment: this.alignment
-                })
-            },
-            () => this.runDense(this.buf.hidden, this.buf.perception, this.layerTex1),
-            () => this.runDense(this.buf.update, this.buf.hidden, this.layerTex2),
-            () => this.runLayer(this.progs.update, this.buf.newState, {
-                u_input: this.buf.state, u_update: this.buf.update,
+    step(stage) {
+        stage = stage || 'all';
+        if (!this.layers.every(l=>l.ready)) 
+            return;
+    
+        if (stage == 'all') {
+            const [gridW, gridH] = this.gridSize;
+            this.shuffleOfs = [Math.floor(Math.random() * gridW), Math.floor(Math.random() * gridH)];
+        }
+        
+        if (stage == 'all' || stage == 'perception') {
+            this.runLayer(self.progs.perception, this.buf.perception, {
+                u_input: this.buf.state, u_angle: this.rotationAngle / 180.0 * Math.PI,
+                u_alignment: this.alignment
+            });
+        }
+        let inputBuf = this.buf.perception;
+        for (let i=0; i<this.layers.length; ++i) {
+            if (stage == 'all' || stage == `layer${i}`)
+                this.runDense(this.buf[`layer${i}`], inputBuf, this.layers[i]);
+            inputBuf = this.buf[`layer${i}`];
+        }
+        if (stage == 'all' || stage == 'newState') {
+            this.runLayer(this.progs.update, this.buf.newState, {
+                u_input: this.buf.state, u_update: inputBuf,
                 u_unshuffleTex: this.unshuffleTex,
                 u_seed: Math.random() * 1000, u_updateProbability: this.updateProbability
-            }),
-        ];
-    }
+            });
+        }
 
-    paint(x, y, r, brush) {
-        this.runLayer(this.progs.paint, this.buf.control, {
-            u_pos: [x, y], u_r: r, u_brush: [brush, 0, 0, 0],
-        });
-    }
-
-    clearCircle(x, y, r, brush) {
-        self.runLayer(self.progs.paint, this.buf.state, {
-            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0],
-        });
+        if (stage == 'all') {
+            [this.buf.state, this.buf.newState] = [this.buf.newState, this.buf.state];
+        }
     }
 
     benchmark() {
@@ -420,35 +533,46 @@ export class CA {
         flush();
         const total = (Date.now() - start) / stepN;
 
+        const ops = ['perception'];
+        for (let i=0; i<this.layers.length; ++i)
+            ops.push(`layer${i}`);
+        ops.push('newState');
         let perOpTotal = 0.0;
         const perOp = [];
-        for (const op of this.ops) {
+        for (const op of ops) {
             const start = Date.now();
-            let r;
             for (let i = 0; i < stepN; ++i) {
-                r = op();
+                this.step(op);
             }
-            flush(r.output);
+            flush(this.buf[op]);
             const dt = (Date.now() - start) / stepN;
             perOpTotal += dt
-            perOp.push([r.programName, dt]);
+            perOp.push([op, dt]);
         }
-        const petOpStr = perOp.map((p) => {
+        const perOpStr = perOp.map((p) => {
             const [programName, dt] = p;
             const percent = 100.0 * dt / perOpTotal;
             return `${programName}: ${percent.toFixed(1)}%`;
         }).join(', ');
-        return `${(total).toFixed(2)} ms/step, ${(1000.0 / total).toFixed(2)} step/sec\n` + petOpStr + '\n\n';
+        return `${(total).toFixed(2)} ms/step, ${(1000.0 / total).toFixed(2)} step/sec\n` + perOpStr + '\n\n';
+    }
+
+    paint(x, y, r, brush) {
+        this.runLayer(this.progs.paint, this.buf.control, {
+            u_pos: [x, y], u_r: r, u_brush: [brush, 0, 0, 0],
+        });
+    }
+
+    clearCircle(x, y, r, brush) {
+        self.runLayer(self.progs.paint, this.buf.state, {
+            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0],
+        });
     }
 
     setWeights(models) {
         const gl = this.gl;
-        if (this.layerTex1) {
-            gl.deleteTexture(this.layerTex1.tex);
-            gl.deleteTexture(this.layerTex2.tex);
-        }
-        this.layerTex1 = createDenseInfo(gl, models.layers[0]);
-        this.layerTex2 = createDenseInfo(gl, models.layers[1]);
+        this.layers.forEach(layer=>gl.deleteTexture(layer));
+        this.layers = models.layers.map(layer=>createDenseInfo(gl, layer));
     }
 
     runLayer(program, output, inputs) {
@@ -483,19 +607,17 @@ export class CA {
         });
     }
 
-    step() {
-        if (!this.layerTex1.ready || !this.layerTex2.ready)
-            return;
-        for (const op of this.ops) op();
-        [this.buf.state, this.buf.newState] = [this.buf.newState, this.buf.state];
-    }
-
-    draw() {
+    draw(zoom) {
         const gl = this.gl;
+        zoom = zoom || 1.0;
 
         gl.useProgram(this.progs.vis.program);
         twgl.setBuffersAndAttributes(gl, this.progs.vis, this.quad);
-        const uniforms = { u_raw: 0.0 }
+        const uniforms = { u_raw: 0.0, u_zoom: zoom,
+            u_angle: this.rotationAngle / 180.0 * Math.PI,
+            u_alignment: this.alignment,
+            u_perceptionCircle: this.perceptionCircle,
+            u_arrows: this.arrowsCoef};
         let inputBuf = this.buf.state;
         if (this.visMode != 'color') {
             inputBuf = this.buf[this.visMode];

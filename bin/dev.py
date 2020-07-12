@@ -21,12 +21,15 @@ def write_file(fname, fout):
             fout.write(s)
 
 def build():
-    os.system('ls')
-    os.system('''curl -o ../article.html \
-     --header 'Authorization: token fa067dbcf4cab3902791f99ebdc5a161b3dcccdc' \
-     --header 'Accept: application/vnd.github.v3.raw' \
-     --location https://api.github.com/repos/znah/post--selforg-textures/contents/article.html \
-    ''')
+    if os.environ.get("GIT_API_KEY_SELFORG") is not None:
+	print("using api key in environment")
+        os.system('''curl -o ../article.html \
+        --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
+        --header 'Accept: application/vnd.github.v3.raw' \
+        --location https://api.github.com/repos/$(git remote -v | head -n 1 | sed 's/.*github\.com:\(.*\)\.git.*/\\1/')/contents/article.html \
+        ''')
+    else:
+        print("no api key available")
     with open('index.html', 'w') as fout:
       write_file('../main.html', fout)
     print('build finished')
@@ -39,6 +42,7 @@ class Handler(SimpleHTTPRequestHandler):
         if six.PY3:
             super().do_GET()
         else:
+            print(self)
             SimpleHTTPRequestHandler.do_GET(self)
 
 if __name__ == '__main__':

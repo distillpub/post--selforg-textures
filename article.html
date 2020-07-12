@@ -1,19 +1,14 @@
 <d-article>
 %% contents.html
-<h2 id='experiment-ideas'>Experiment ideas:</h2>
-<ul><li>A way to pre-train without an objective (self-supervised/unsupervised)</li></ul>
-<ul><li>Loss that encourages </li></ul>
-<ul><li>3D CAs that get observed by an animal from some perspective - have them learn patterns that work in 2D projection of 3D cell. </li></ul>
-<ul><li>Can they count? Try a loss function that “counts” the number of objects in the visualization. </li></ul>
-<ul><li>Can we translate between two types of CAs. </li></ul>
-<ul><li></li></ul>
-<ul><li>Can they compute physics? Try a loss function that enforces some sort of physical phenomenon. If this homogenous compute works - can we convert this to a kernel in physics?</li></ul>
-
 <h2 id='patterns-and'>Patterns and Textures</h2>
 <p></p>
-<p>Zebra stripes have a characteristic pattern anyone can recognize and describe. At the same time it is said that no two zebras have identical stripes. One would then draw the conclusion that evolution has programmed these cells to produce a certain pattern as opposed to programming them with an exact bitmap of stripes to mould the surface of the Zebra’s body.</p>
 
-<p>We’ve demonstrated the ability for the CA model to almost perfectly recreate any given image using a pixel based loss. Suppose we instead want them to simply approximate a certain “style” or a pattern, and leave them a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. As luck would have it, there’s been extensive research on style transfer and feature visualization by constructing input images to excite or constrain certain intermediate layers of neural networks trained on image tasks, with the go-to network being VGG. Much of this work is summarized and discussed in <u>Differentiable Parametrizations</u>.</p>
+<p>Zebra stripes have a characteristic pattern anyone can recognize and describe. At the same time it is said that no two zebras have identical stripes. One would then draw the conclusion that evolution has programmed these cells to generate a certain pattern, with certain characteristics, as opposed to programming them with an exact bitmap of stripes to mould the surface of the Zebra’s body. </p>
+
+<p>Patterns and textures are intriguing visual features in many ways. One may postulate that a pattern is any repeating set of visual landmarks that lends itself to tiling in some shape or form. But this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of random strands pointing in random directions, with no discernable regularity to the pattern. A standard maze can also be constructed in a way as to be completely non-repeating, but can be still be described as a pattern. </p>
+
+<p>We hope keen readers are convinced of the ability of our CA model to almost perfectly recreate any given image when trained with a pixel based loss - if they not - we encourage them to peruse our seminal article on Growing Cellular Automata.</p>
+<p>Now, suppose we instead want them to simply approximate a certain “style” or a pattern, and leave them a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. As luck would have it, there’s been extensive research on style transfer and feature visualization by constructing input images to excite or constrain certain intermediate layers of neural networks trained on image tasks, with the go-to network being VGG. Much of this work is summarized and discussed in <u>Differentiable Parametrizations</u>.</p>
 
 <p>Just as in Differentiable Parametrizations, we can employ the building-block aspect of differentiable models to plug in our Cellular Automata as the parametrization layer for an image we are trying to constrain to a certain style - having the CAs act as the “renderer”, so to speak, and having a second network, such as VGG, act as a distinguisher of patterns - providing the gradient necessary to produce a pattern of a certain style</p>
 
@@ -23,6 +18,7 @@
 <p>[CLICKABLE INTERACTIVE IMAGE GRAPHIC]</p>
 
 <p>What’s more interesting and not readily apparent in snapshots of batches is that the patterns are in fact not static. Taking a look at the video below, we see all manners of gradual motion. This is not entirely unexpected - in the definition of our experiments we do not place any constraints which individual pixel values should be - instead we just want the overall output to approximate a pattern we chose through our target image. Given the many convolutional layers in VGG, the network likely does not depend much on the exact spatial placement of the pattern, but rather only with its presence.</p>
+
 
 <h2 id='feature-visualization'>Feature Visualization</h2>
 
@@ -35,12 +31,32 @@
 <p>Luckily, we can explore this idea with minimal effort by simply taking our VGG implementation from before and exploring what happens if we are to generate a CA that excites a given neuron. </p>
 
 <p>[EYE GENERATING CA GRAPHIC]</p>
+
+<p>[TODO: diagram similar to diff param]</p>
+<h2 id='solitons-lenia'>Solitons, Lenia, and Smoothlife</h2>
+<p>The motion of waves propagating through a medium can be described using the “classical” wave equation. </p>
+
+<p>[todo: insert latex wave-eq] </p>
+
+<p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies - a phenomenon referred to as a “group” or a “packet”. Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe real-world waves, such as waves in water, light waves propagating, or sound, we have somewhat more complex partial differential equations governing their motion. These waves all share a common property - that waves of different frequencies will travel at different speeds. “Speed” in such a context is a tricky thing to define - however in this case we are referring to the speed of any single given wave - how fast its peak travels in space. When waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience “dispersion” - the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a “soliton” - as it describes a wave packet which exactly retains its shape during propagation.</p>
+
+<p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render from DTD, or even in inception, consist of well defined structures such as circles (link polka dot or eyes) or polygons (link bee-hive). We consider such structures to be functionally equivalent to solitons in the world of waves and refer to them as such. Solitons are also used to describe the structures found in “Lenia” by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.</p>
+
+<p>In the case of pattern generation with CAs, the most curious aspect of the resulting CA is how it tends to find a solution to generating the pattern that is often similar to the actual physical generative rule for such a pattern. This concept is somewhat ill defined and hard to quantitatively measure, but we will attempt to demonstrate the idea through a number of examples. </p>
+
+<h2 id='interesting-properties'>Interesting properties of solitons and their interactions.</h2>
+
+<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite common ly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li></ul>
+
+<ul><li>Solitons can “divide” into two</li></ul>
+<ul><li></li></ul>
+<ul><li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when</li></ul>
 <h2 id='hidden-states'>Hidden states</h2>
 <p>There are various ways to visualize these communication channels - but one of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
 
 <p>As luck would have it - we can do something very similar with our Cellular Automata. Recall that our CA model consists of three visible channels, with the rest being treated as latent channels visible to the update step but excluded from any loss function. . The figure below visualizes the magnitudes of these hidden channels when mapped to intensity in RGB. </p>
 
-<p>We immediately notices several interesting aspects.</p>
+<p>We immediately noticed several interesting aspects.</p>
 
 <p>This means the hidden channels can be considered to be “floating” (to borrow a term from circuits) - they are not being pulled to any specific final state or intermediate state and instead converge to some dynamical system assisting the cell fulfill its “true” objective</p>
 
@@ -48,23 +64,15 @@
 
 <p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or “stiffness” of other cells or even emit different chemical signals to diffuse over the local substrate (citation needed + cleanup for all these). </p>
 
+<p>Visualization</p>
 
-<p>Visualization </p>
 <ul><li>Hidden state analysis yields some interesting results. For instance - certain anomalies in patterns will only appear after some time (eyes) and you can see distinct activity in the regions where they are about to appear. </li></ul>
 <ul><li>Hidden states for automata trained from the same ancestors have similar magnitudes.</li></ul>
 <ul><li>Visualization concept:</li></ul>
-<ul><li>Show hidden state alongside the the RGB state, and highlight the neural activity in the hidden state with a red circle or “highlight” effect (dark overlay + lightened focus)   </li></ul>
-<h2 id='finetuning-cellular'>Fine-tuning Cellular Automata</h2>
-<p>One could theorize that a large part of the training process for our CAs consists of. </p>
+<ul><li>Show hidden state alongside the the RGB state, and highlight the neural activity in the hidden state with a red circle or “highlight” effect (dark overlay + lightened focus)</li></ul>
 
-<ul><li>Initializing with existing checkpoint dramatically accelerates convergence. Let’s make some </li></ul>
-<ul><li>Leads to a better CA</li></ul>
-<h2 id='cooperating-relatives'>Cooperating Relatives</h2>
-
-<ul><li>CAs trained starting from the same checkpoint (“relatives”) can interface with each other. </li></ul>
-<ul><li>Experiment interpolation between the parameters of these two </li></ul>
-
-
+<p>References:</p>
+<ul><li><u>Describing Textures in the Wild</u></li></ul>
 
 </d-article>
 <d-appendix>

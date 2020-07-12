@@ -25,24 +25,75 @@ export function createDemo(divId, modelsSet) {
   canvas.height = H * 6;
 
   const params = {
-    modelSet: 'models.json',
-    model: 10,
-    brushSize: 8,
+    modelSet: 'demo/models.json',
+    models: null,
+    model: 35,
+    modelname: "mixed",
+    brushSize: 20,
     autoFill: true,
+    debug: false,
   };
   let gui = null;
+
+  async function initLegend(models) {
+    console.log(models);
+    const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
+    const w = Math.ceil(Math.sqrt(models.model_names.length));
+    const h = Math.ceil(models.model_names.length/w);
+    models.model_names.forEach((name, idx, _) => {
+
+      const texture = document.createElement('div');
+
+      let x = 100.0*(idx % w)/(w-1);
+      let y = 100.0*Math.floor(idx / w)/(h-1);
+      console.log(x, y);
+      console.log(w, h);
+      texture.style.background = "url('demo/sprites.png') " + x + "% " + y + "%";
+      texture.style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
+      texture.id = name; //html5 support arbitrary id:s
+      texture.className = 'texture-square';
+      // texture.onmouseover = video.play.bind(video);
+      // texture.onmouseout = video.pause.bind(video);
+      // texture.addEventListener('touchstart', video.play.bind(video), false);
+      // texture.addEventListener('touchend', video.pause.bind(video), false);
+      texture.onclick = (() => {
+        console.log(name);
+        ca.clearCircle(0, 0, 1000);
+        params.model = brush2idx[name];
+        params.modelname = name;
+        ca.paint(0, 0, 10000, brush2idx[name], [0, 0]);
+        updateUI();
+      })
+      // const pause = video.pause.bind(video);
+      // texture.onmouseout = (()  => {pause(); video.currentTime = 0;});
+
+      // texture.appendChild(video)
+      if (name.startsWith('mixed')){ 
+        $("#inception").appendChild(texture);
+      } else {
+        $('#dtd').appendChild(texture);
+      }
+      console.log(name);
+    });
+
+
+  }
 
   function createGUI(models) {
     if (gui != null) {
       gui.destroy();
     }
     gui = new dat.GUI();
+    if (!params.debug) {
+      dat.GUI.toggleHide();
+    }
     gui.add(params, 'modelSet', modelsSet).onChange(updateCA);
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
     gui.add(params, 'model').options(brush2idx).onChange(() => {
       if (params.autoFill)
         ca.paint(0, 0, 10000, params.model, [0, 0]);
     });
+    params.modelname = models.model_names[params.model];
     gui.add(params, 'autoFill')
     gui.add(params, 'brushSize').min(1).max(32).step(1);
   }
@@ -66,7 +117,8 @@ export function createDemo(divId, modelsSet) {
   function click(pos) {
     const [x, y] = pos;
     const [px, py] = prevPos;
-    ca.clearCircle(x, y, params.brushSize, params.model, [x - px, y - py]);
+    ca.clearCircle(x, y, params.brushSize);
+    // ca.paint(x, y, params.brushSize, params.model, [x - px, y - py]);
     prevPos = pos;
   }
 
@@ -80,35 +132,61 @@ export function createDemo(divId, modelsSet) {
     });
     $('#play').style.display = paused ? "inline" : "none";
     $('#pause').style.display = !paused ? "inline" : "none";
+
     const speed = parseInt($('#speed').value);
     $('#speedLabel').innerHTML = ['1/60 x', '1/10 x', '1/2 x', '1x', '2x', '4x', '<b>max</b>'][speed + 3];
-    $("#rotationLabel").innerText = $('#rotation').value + '°';
+    ca.rotationAngle = parseInt($('#rotation').value);
+    $('#rotationLabel').innerHTML = ca.rotationAngle + " deg";
+    const w = Math.ceil(Math.sqrt(params.models.model_names.length));
+    const h = Math.ceil(params.models.model_names.length/w);
+    let x = 100.0*(params.model % w)/(w-1);
+    let y = 100.0*Math.floor(params.model / w)/(h-1);
+    $("#origtex").style.background = "url('demo/dtd_sprites.png') " + x + "% " + y + "%";
+    $("#origtex").style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
+    if (params.modelname.startsWith('mixed')){
+      let oai = document.createElement('a')
+      oai.innerHTML = params.modelname + " (OpenAI Microscope)"
+      oai.href = "https://microscope.openai.com/models/inceptionv1/" + params.modelname.substring(0,8) + "0/" + params.modelname.substring(8)
+      $("#texhinttext").innerHTML = '';
+      $("#texhinttext").appendChild(oai);
+    } else {
+      let dtd = document.createElement('a')
+      dtd.innerHTML = params.modelname + " (DTD)"
+      dtd.href = "https://www.robots.ox.ac.uk/~vgg/data/dtd/"
+      $("#texhinttext").innerHTML = '';
+      $("#texhinttext").appendChild(dtd);
+    }
   }
 
   function initUI() {
     let spriteX = 0;
-    // for (let c of '🦎😀💥👁🐠🦋🐞🕸🥨🎄') {
-    //   const div = document.createElement('div')
-    //   div.id = c;
-    //   div.style.backgroundPositionX = spriteX + 'px';
-    //   div.onclick = ()=>{
-    //     target = c;
-    //     updateModel();
-    //   }
-    //   spriteX -= 40;
-    //   $('#pattern-selector').appendChild(div);
-    // }
-    //$('#reset').onclick = ca.reset;
     $('#play-pause').onclick = () => {
       paused = !paused;
       updateUI();
     };
+
+    $('#reset').onclick = () => {
+      ca.clearCircle(0, 0, 1000);
+      ca.paint(0, 0, 10000, params.model, [0, 0]);
+    };
+
+    // $('#vfield').onclick = () => {
+    //   ca.alignment = (ca.alignment + 1) % 3; 
+    //   updateUI();
+    // };
     // $$('#model-selector input').forEach(sel=>{
     //   sel.onchange = ()=>{
     //     experiment = sel.id;
     //     updateModel();
     //   }
     // });
+    $$('#vectorfield input').forEach(sel=>{
+      sel.onchange = () => {
+        console.log(ca.alignment);
+        ca.alignment = sel.id;
+        updateUI();
+      }
+    });
     $('#speed').onchange = updateUI;
     $('#speed').oninput = updateUI;
     $('#rotation').onchange = updateUI;
@@ -143,14 +221,16 @@ export function createDemo(divId, modelsSet) {
   async function updateCA() {
     const r = await fetch(params.modelSet);
     const models = await r.json();
+    params.models = models;
     const firstTime = ca == null;
     createGUI(models);
     ca = new CA(gl, models, [W, H], gui);
-    ca.paint(0, 0, 10000, 17, [0.5, 0.5]);
+    ca.paint(0, 0, 10000, params.model, [0.5, 0.5]);
 
     window.ca = ca;
     if (firstTime) {
       initUI();
+      initLegend(models);
       requestAnimationFrame(render);
     }
     updateUI();
