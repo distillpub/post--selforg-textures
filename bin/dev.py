@@ -25,21 +25,15 @@ def write_file(fname, fout):
             fout.write(s)
 
 def update_git_file(path, gitUsername, gitRepo):
-    print(path, gitRepo, gitUsername)
     if os.environ.get("GIT_API_KEY_SELFORG") is not None:
-        print("using api key in environment")
-        print('''curl -o ../''' + path + ''' \
-        --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
-        --header 'Accept: application/vnd.github.v3.raw' \
-        --location https://api.github.com/repos/''' + gitUsername + '''/''' + gitRepo + '''/contents/''' + path + ''' \
-        ''')
+        print("Using api key in environment")
         os.system('''curl -o ../''' + path + ''' \
         --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
         --header 'Accept: application/vnd.github.v3.raw' \
         --location https://api.github.com/repos/''' + gitUsername + '''/''' + gitRepo + '''/contents/''' + path + ''' \
         ''')
     else:
-        print("no api key available to auto-download file %s. please provide it by setting ENV var GIT_API_KEY_SELFORG=token" % path)
+        print("No api key available to auto-download file %s. Please provide it by setting ENV var GIT_API_KEY_SELFORG=token" % path)
 
 def build():
     with open('index.html', 'w') as fout:
