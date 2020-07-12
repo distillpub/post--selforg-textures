@@ -15,21 +15,33 @@ def write_file(fname, fout):
             fout.write(s.replace("___MODELS___", str(glob.glob("*.json"))))
             continue
         if s.startswith('%% '):
-            fn = '../'+s.split()[1]
+            inc = s.split()
+            if len(inc) == 4:
+                # auto update this file from specified git repo
+                update_git_file(*inc[1:])
+            fn = '../'+inc[1]
             write_file(fn, fout)
         else:
             fout.write(s)
 
-def build():
+def update_git_file(path, gitUsername, gitRepo):
+    print(path, gitRepo, gitUsername)
     if os.environ.get("GIT_API_KEY_SELFORG") is not None:
         print("using api key in environment")
-        os.system('''curl -o ../article.html \
+        print('''curl -o ../''' + path + ''' \
         --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
         --header 'Accept: application/vnd.github.v3.raw' \
-        --location https://api.github.com/repos/$(git remote get-url origin | sed -E 's/.*(github.com\\/([a-zA-Z0-9_.-]*\\/[a-zA-Z0-9_.-]*).*|github.com:([a-zA-Z0-9_.-]*\\/[a-zA-Z0-9_.-]*)\\.git)/\\2\\3/')/contents/article.html \
+        --location https://api.github.com/repos/''' + gitUsername + '''/''' + gitRepo + '''/contents/''' + path + ''' \
+        ''')
+        os.system('''curl -o ../''' + path + ''' \
+        --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
+        --header 'Accept: application/vnd.github.v3.raw' \
+        --location https://api.github.com/repos/''' + gitUsername + '''/''' + gitRepo + '''/contents/''' + path + ''' \
         ''')
     else:
-        print("no api key available. please provide it by setting ENV var GIT_API_KEY_SELFORG=token")
+        print("no api key available to auto-download file %s. please provide it by setting ENV var GIT_API_KEY_SELFORG=token" % path)
+
+def build():
     with open('index.html', 'w') as fout:
       write_file('../main.html', fout)
     print('build finished')
