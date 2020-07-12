@@ -26,10 +26,10 @@ def build():
         os.system('''curl -o ../article.html \
         --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
         --header 'Accept: application/vnd.github.v3.raw' \
-        --location https://api.github.com/repos/$(git remote -v | head -n 1 | sed 's/.*github\.com:\(.*\)\.git.*/\\1/')/contents/article.html \
+        --location https://api.github.com/repos/$(git remote get-url origin | sed -E 's/.*(github.com\\/([a-zA-Z0-9_.-]*\\/[a-zA-Z0-9_.-]*).*|github.com:([a-zA-Z0-9_.-]*\\/[a-zA-Z0-9_.-]*)\\.git)/\\2\\3/')/contents/article.html \
         ''')
     else:
-        print("no api key available")
+        print("no api key available. please provide it by setting ENV var GIT_API_KEY_SELFORG=token")
     with open('index.html', 'w') as fout:
       write_file('../main.html', fout)
     print('build finished')
