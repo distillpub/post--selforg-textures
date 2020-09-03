@@ -62,6 +62,97 @@
   </d-front-matter>
 
   <style>
+   /* ****************************************
+    * Thread Info
+    ******************************************/
+
+    .thread-info {
+      background-color: hsl(54, 78%, 96%);
+      border-left: solid hsl(54, 33%, 67%) 1px;
+      padding: 1em;
+      color: hsla(0, 0%, 0%, 0.67);
+    }
+
+    #thread-nav {
+      margin-top: 20;
+      margin-bottom: 1.5rem;
+      display: grid;
+      grid-template-columns: 45px 2fr 3fr;
+      grid-template-areas:
+        'thread-icon explanation explanation '
+        'thread-icon prev next';
+      grid-column-gap: 1.5em;
+    }
+
+    @media (min-width: 768px) {
+      #thread-nav {
+        grid-template-columns: 65px 3fr 2fr;
+      }
+    }
+
+    #thread-nav .thread-icon {
+      grid-area: thread-icon;
+      padding: 0.5em;
+      justify-self: center;
+    }
+
+    #thread-nav .explanation {
+      grid-area: explanation;
+      font-size: 85%;
+      color: hsl(0, 0%, 0.33);
+    }
+
+    #thread-nav .prev {
+      grid-area: prev;
+    }
+
+    #thread-nav .prev::before {
+      content: '← Previous Article';
+    }
+
+    #thread-nav .overview {
+      scroll-behavior: smooth;
+    }
+
+    #thread-nav .overview::before {
+      content: '↑';
+      white-space: nowrap;
+      margin-right: 0.5em;
+    }
+
+    #thread-nav .next {
+      grid-area: next;
+      scroll-behavior: smooth;
+    }
+
+    #thread-nav .next::before {
+      content: 'Next Article →';
+    }
+
+    #thread-nav .next::before,
+    #thread-nav .prev::before {
+      display: block;
+      white-space: nowrap;
+      padding: 0.5em 0;
+      font-size: 80%;
+      font-weight: bold;
+      margin-top: 0px;
+      margin-right: 0.5em;
+      text-transform: uppercase;
+    }
+
+    #thread-nav .prev,
+    #thread-nav .next,
+    #thread-nav .overview {
+      font-size: 80%;
+      line-height: 1.5em;
+      font-weight: 600;
+      border-bottom: none;
+      color: #2e6db7;
+      /* margin-top: 0.25em; */
+      letter-spacing: 0.25px;
+    }
+
     figure {
       text-align: center;
       margin-bottom: 0.5em;
@@ -640,7 +731,7 @@ input[type="radio"] {
 <script src="dat.gui.min.js"></script>
 <script type="module">
     import { createDemo } from './demo.js'
-    createDemo('demo', ['models_old.json', 'models.json', 'models_eyvind.json']);
+    createDemo('demo', ['input_texture_macprojpg channel_n_4.json', 'input_texture_minecraftjpg channel_n_4.json', 'input_texture_mondrianjpg channel_n_12.json', 'input_texture_macprojpg channel_n_16.json', 'abc.json', 'kusamajpg.json', 'minecraftjpg.json', 'input_texture_macprojpg channel_n_8.json', 'abc2.json', 'input_texture_minecraftjpg channel_n_8.json', 'input_texture_mondrianjpg channel_n_8.json', 'input_texture_kusamajpg channel_n_12.json', 'input_texture_hockneyjpg channel_n_8.json', 'models_export.json', 'hockneyjpg.json', 'models_eyvind.json', 'input_texture_kusamajpg channel_n_4.json', 'input_texture_kusamajpg channel_n_8.json', 'mondrianjpg.json', 'input_texture_hockneyjpg channel_n_16.json', 'input_texture_minecraftjpg channel_n_16.json', 'input_texture_hockneyjpg channel_n_12.json', 'input_texture_mondrianjpg channel_n_4.json', 'input_texture_minecraftjpg channel_n_12.json', 'input_texture_macprojpg channel_n_12.json', 'input_texture_hockneyjpg channel_n_4.json', 'models.json', 'input_texture_mondrianjpg channel_n_16.json', 'input_texture_kusamajpg channel_n_16.json', 'models_old.json', 'macprojpg.json']);
 </script>
 
 </d-title>
@@ -664,25 +755,49 @@ input[type="radio"] {
     <div><a href="#discussion">Discussion</a></div>
   </nav>-->
 </d-contents>
+
+<section
+  id="thread-nav"
+  class="thread-info"
+  style="margin-top: 10px; margin-bottom: 40px"
+>
+  <img
+    class="thread-icon"
+    src="images/multiple-pages.svg"
+    width="43px"
+    height="50px"
+  />
+  <p class="explanation">
+    This article is part of the
+    <a href="/2020/selforg/">Differentiable Self-organizing Systems Thread</a>,
+    an experimental format collecting invited short articles delving into
+    differentiable self-organizing systems, interspersed with critical
+    commentary from several experts in adjacent fields.
+  </p>
+  <a class="prev" href="/2020/selforg/mnist/"
+    >Self-classifying MNIST Digits</a
+  >
+</section>
 <h2 id='patterns-and'>Patterns and Textures</h2>
+<p></p>
 <p></p>
 
 <p>Zebra stripes have a characteristic pattern anyone can both recognize and describe, at least to some degree. At the same time it is said that no two zebras have identical stripes. One would then draw the conclusion that evolution has programmed the cells responsible for creating the Zebra pattern to generate a pattern of a certain quality, with certain characteristics, as opposed to programming them with the blueprints for an exact bitmap of the edges and locations of stripes to be moulded the surface of the Zebra’s body. </p>
 
 <p>Patterns and textures are intriguing visual features in many ways. One may postulate that a pattern is any repeating set of visual landmarks that lends itself to tiling in some shape or form. But this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of random strands pointing in random directions, with no discernable regularity to the pattern. A standard maze can also be constructed in a way as to be completely non-repeating, but would colloquially still be described as a pattern. </p>
 
-<p>We hope keen readers have already been convinced of the ability of our differentiable Cellular Automata model to almost perfectly recreate any image when trained with a pixel based loss. If this is not the case, we encourage them to peruse our seminal article on Growing Cellular Automata [todo: link to growing-ca + cite]</p>
+<p>We hope keen readers have already been convinced of the ability of our differentiable Cellular Automata model to almost perfectly recreate any image when trained with a pixel based loss. If this is not the case, we encourage them to peruse our seminal article on Growing Cellular Automata [todo: link to growing-ca + cite].</p>
 
-<p>Now, suppose we instead want to approximate a certain “style” or a pattern, and leave a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. As luck would have it, there’s been extensive research on style transfer and feature visualization by constructing input images to excite or constrain certain intermediate layers of neural networks trained on image tasks, with the go-to network for extracting these statistics being the VGG family of image classifiers. For further reference, a good summary of such sowrk is available in <u>Differentiable Parametrizations</u>. [todo:properly cite+link]</p>
+<p>Now, suppose we instead want to approximate a certain “style” or a pattern, and leave a degree of freedom in terms of the exact pixel values and distribution used to approximate such a pattern. As luck would have it, there has’s been extensive research on style transfer and feature visualization by constructing input images to excite or constrain certain intermediate layers of neural networks trained on image tasks, with the go-to network for extracting these statistics being the VGG family of image classifiers. For further reference, a good summary of such work is available in <u>Differentiable Parametrizations</u>. [todo:properly cite+link]</p>
 
-<p>Just as in Differentiable Parametrizations, we can employ the building-block aspect of differentiable models to plug in our Cellular Automata as the parametrization layer for an image we are trying to constrain to a certain style - having the CAs act as the “renderer”, so to speak, and having a second network, such as VGG, act as a distinguisher of patterns - providing the gradient necessary to produce a pattern of a certain style</p>
+<p>Just as in Differentiable Parametrizations, we can employ the building-block aspect of differentiable models to plug in our Cellular Automata as the parametrization layer for an image we are trying to constrain to a certain style - having the CAs act as the “renderer”, so to speak, and having a second network, such as VGG, act as a distinguisher of patterns - providing the gradient necessary to produce a pattern of a certain style.</p>
 
-<p>Let’s give this simple experiment a try - processing a pattern of interest through VGG, we pick an intermediate layer which is known to be a good representation of the “styles” involved and note the activations of the neurons. Now, we connect the output of our Cellular Automata into VGG and backpropagate into the parameters of the automata</p>
+<p>Let’s give this simple experiment a try - processing a pattern of interest through VGG, we pick an intermediate layer which is known to be a good representation of the “styles” involved and note the activations of the neurons. Now, we feedconnect the output of our Cellular Automata tointo VGG and backpropagate into the parameters of the automata.</p>
 <p>Immediately notice that they produce coherent patterns in the style of our requested input image, and are able to learn these in very few steps.</p>
 
 <p>[CLICKABLE INTERACTIVE IMAGE GRAPHIC]</p>
 
-<p>What’s more interesting and not readily apparent in snapshots of batches is that the patterns are in fact not static. Taking a look at the video below, we see all manners of gradual motion. This is not entirely unexpected - in the definition of our experiments we do not place any constraints which individual pixel values should be - instead we just want the overall output to approximate a pattern we chose through our target image. Given the many convolutional layers in VGG, the network likely does not depend much on the exact spatial placement of the pattern, but rather only with its presence.</p>
+<p>What’s more interesting and not readily apparent in snapshots of batches is that the patterns are in fact not static. Taking a look at the video below, we see all manners of gradual motion. This is not entirely unexpected - in the definition of our experiments we do not place any constraints onwhich individual pixel values should be - instead we just want the overall output to approximate a pattern we chose through our target image. Given the many convolutional layers in VGG, the network likely does not depend much on the exact spatial placement of the pattern, but rather only onwith its presence.</p>
 
 
 <h2 id='feature-visualization'>Feature Visualization</h2>
@@ -691,7 +806,7 @@ input[type="radio"] {
 
 <p>Even more remarkable is the fact that the individual cells composing the butterfly’s wings can self assemble into coherent, beautiful, shapes far larger than an individual cell - indeed a cell is on the order of 1e-...m while the features on the wings will grow to as large as 1e-...m. Communication over this distance implies a self-organization over a distance of millions of cells.</p>
 
-<p>In addition to style transfer -  a common approach to investigating neural networks (cite: OpenAI microscope) is to look at what inhibits or excites individual neurons in a network. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there’s a large contemporary body of work on doing the same with neural networks. </p>
+<p>In addition to style transfer -  a common approach to investigating neural networks (cite: OpenAI microscope) is to look at what inhibits or excites individual neurons in a network. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is’s a large contemporary body of work on doing the same with neural networks. </p>
 
 <p>Luckily, we can explore this idea with minimal effort by simply taking our VGG implementation from before and exploring what happens if we are to generate a CA that excites a given neuron. </p>
 
@@ -711,12 +826,13 @@ input[type="radio"] {
 
 <h2 id='interesting-properties'>Interesting properties of solitons and their interactions.</h2>
 
-<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite common ly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li></ul>
-
+<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite common ly observed in the Inception renderings. Two solitons approaching each other too closely may decay. j</li></ul>
+<ul><li></li></ul>
 <ul><li>Solitons can “divide” into two</li></ul>
 <ul><li>In textures that are composed of threads or lines, the thread grow in their respective directions and exhibit behaviour where they will join other threads, or grow around them. </li></ul>
 <ul><li></li></ul>
-<ul><li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when</li></ul>
+<ul><li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when </li></ul>
+<ul><li></li></ul>
 <ul><li></li></ul>
 <h2 id='hidden-states'>Hidden states</h2>
 <p>There are various ways to visualize these communication channels - but one of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
