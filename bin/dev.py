@@ -42,6 +42,9 @@ def parse_byte_range(byte_range):
 
 def write_file(fname, fout):
     for s in open(fname):
+        if "___MODELS___" in s:
+            fout.write(s.replace("___MODELS___", str(glob.glob("*.json"))))
+            continue	
         if s.strip().startswith('{% include '):
             fn = '../'+s.split()[2]
             write_file(fn, fout)
