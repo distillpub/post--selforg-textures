@@ -1,0 +1,6 @@
+---
+# We assume Jekyll is only used in draft/dev environments, so deny all.
+permalink: /robots.txt
+---
+User-agent: *
+Disallow: /
