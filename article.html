@@ -10,7 +10,7 @@
 
 <p>Zebra stripes consist of a characteristic pattern that practically anybody can both recognize in the wild, and describe - at least to some degree. At the same time, it is said that no two zebras have identical stripes<d-footnote> Perhaps apocryphal, but the authors would wager it true were you to pedantically measure every molecule on the surface of said zebra. Point is - "zebra stripes" - as a concept in human understanding - refers to the general structure of a black and white striped pattern, and not to a specific mapping from location to colour.</d-footnote>. One can then draw the conclusion that evolution has programmed the cells responsible for creating the Zebra pattern to generate a pattern of a certain quality, with certain characteristics, as opposed to programming them with the blueprints for an exact bitmap of the edges and locations of stripes to be moulded to the surface of the Zebra's body. </p>
 
-<p>More generally - patterns and textures are intriguing visual features in many ways. One may postulate that a pattern, at least in the visual sense, is any repeating set of visual landmarks that lends itself to tiling in some shape or form. But this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of random strands pointing in random directions, with no discernable regularity to the pattern. A standard maze can also be constructed in a way as to be completely non-repeating, but would colloquially still be described as a pattern. </p>
+<p>Patterns and textures are somewhat ill-defined concepts. One may postulate that a pattern, at least in the visual sense, is any repeating set of visual landmarks that lends itself to tiling in some shape or form. But this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of strands pointing in random directions, with no discernable regularity to the pattern. A standard maze can also be constructed in a way as to be completely non-repeating, but would colloquially still be described as a pattern. What the authors believe is that patterns are often </p>
 
 <p>We hope keen readers have already been convinced of the ability of our differentiable Cellular Automata model to almost perfectly recreate any image when trained with a pixel based loss. If this is not the case, we encourage them to peruse our seminal article on Growing Cellular Automata [todo: link to growing-ca + cite].</p>
 
@@ -24,8 +24,6 @@
 <p>[CLICKABLE INTERACTIVE IMAGE GRAPHIC]</p>
 
 <p>What's more interesting and not readily apparent in snapshots of batches is that the patterns are in fact not static. Taking a look at the video below, we see all manners of gradual motion. This is not entirely unexpected - in the definition of our experiments we do not place any constraints onwhich individual pixel values should be - instead we just want the overall output to approximate a pattern we chose through our target image. Given the many convolutional layers in VGG, the network likely does not depend much on the exact spatial placement of the pattern, but rather only onwith its presence.</p>
-
-
 <h2 id='feature-visualization'>Feature Visualization</h2>
 
 <p>Some (all?) butterflies have remarkably lifelike eyes on their wings. Evolution has placed these there to trigger a response of fear in potential predators. It is likely that neither the predator nor the butterfly has a concept for what an eye is or does, or even less so any <a href='https://en.wikipedia.org/wiki/Theory_of_mind'>theory of mind</a> regarding each other, but the magic of evolutionary development has nonetheless reached a state where the butterfly ingeniously tricks predators into fearing a harmless bug instead of consuming it. </p>
@@ -39,6 +37,8 @@
 <p>[EYE GENERATING CA GRAPHIC]</p>
 
 <p>[TODO: diagram similar to diff param]</p>
+
+<p>We take the output of the CA after a certain number of iterations, and simpy use it as the input for a different network. There is a high-level equ</p>
 <h2 id='solitons-lenia'>Solitons, Lenia, and Smoothlife</h2>
 <p>The motion of waves propagating through a medium can be described using the "classical" wave equation. </p>
 
@@ -52,7 +52,7 @@
 
 <h2 id='interesting-properties'>Interesting properties of solitons and their interactions.</h2>
 
-<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite common ly observed in the Inception renderings. Two solitons approaching each other too closely may decay. j</li>
+<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite common ly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li>
 <li></li>
 <li>Solitons can "divide" into two</li>
 <li>In textures that are composed of threads or lines, the thread grow in their respective directions and exhibit behaviour where they will join other threads, or grow around them. </li>
