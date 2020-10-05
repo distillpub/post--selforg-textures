@@ -1,9 +1,10 @@
-'''Advanced web-development server'''
+''' "Advanced web-development server" '''
 
 from __future__ import print_function
 
 import os, glob
 import six
+from six.moves.urllib.request import urlopen, Request
 if six.PY3:
     from http.server import SimpleHTTPRequestHandler, test
 else:
@@ -40,29 +41,40 @@ def parse_byte_range(byte_range):
         raise ValueError('Invalid byte range %s' % byte_range)
     return first, last
 
-def write_file(fname, fout):
-    for s in open(fname):
+def write_file(fname, fout, article_html):
+    for s in open(fname) if (fname != "article.html" or article_html is None) else article_html:
         if "___MODELS___" in s:
             fout.write(s.replace("___MODELS___", str(glob.glob("*.json"))))
-            continue	
+            continue
         if s.strip().startswith('{% include '):
             fn = '../'+s.split()[2]
-            write_file(fn, fout)
+            write_file(fn, fout, article_html)
         else:
             fout.write(s)
 
 def build():
-    if os.environ.get("GIT_API_KEY_SELFORG") is not None:
-        print("using api key in environment")
-        os.system('''curl -o ../article.html \
-        --header 'Authorization: token ''' + os.environ.get("GIT_API_KEY_SELFORG") + '''' \
-        --header 'Accept: application/vnd.github.v3.raw' \
-        --location https://api.github.com/repos/$(git remote -v | head -n 1 | sed 's/.*github\.com:\(.*\)\.git.*/\\1/')/contents/article.html \
-        ''')
-    else:
-        print("no api key available")
+    article_html = None
+    try:
+        found_remote = False
+        remote_url = None
+        for s in open('../.git/config'):
+            if s.strip() == '[remote "origin"]':
+                found_remote = True
+            if found_remote and s.strip().startswith('url'):
+                remote_url = s.strip().split('=', 1)[1]
+        uname_and_repo = re.match(r".*github\.com[:|/](.*)\.git.*", remote_url).group(1)
+        req = Request('https://api.github.com/repos/' + uname_and_repo + '/contents/article.html')
+        req.add_header('Authorization', 'token ' + os.environ.get("GIT_API_KEY_SELFORG"))
+        req.add_header('Accept', 'application/vnd.github.v3.raw')
+        article_html = urlopen(req)
+        if article_html.getcode() != 200:
+          article_html = None
+    except Exception as e:
+        article_html = None
+        print("failed to fetch latest article.html. error:");
+        print(e)
     with open('index.html', 'w') as fout:
-      write_file('../main.html', fout)
+      write_file('../main.html', fout, article_html)
     print('build finished')
 
 
