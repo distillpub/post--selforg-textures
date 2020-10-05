@@ -1,6 +1,10 @@
 <d-article>
 {% include contents.html %}
 {% include nextPrev.html %}
+<h2 id='introduction'>Introduction</h2>
+<p>The self-organizing systems series of articles has covered a number of topics so far - from generating stable and regenerating static images, to self-classification and modeling physical systems. Many of the interesting properties of these aforementioned systems is a result of the strong inductive prior we place on our system - having relatively simple rules occurring in parallel across a large number of individual cells. </p>
+
+<p>In this work we set out to investigate how CAs behave when they are used as a parametrization for input images to other neural networks. This work is strongly inspired by Differentiable Image Parametrizations.</p>
 <h2 id='patterns-and'>Patterns and Textures</h2>
 <p></p>
 <figure>
@@ -18,7 +22,10 @@
 
 <p>Just as in Differentiable Parametrizations, we can employ the building-block aspect of differentiable models to plug in our Cellular Automata as the parametrization layer for an image we are trying to constrain to a certain style - having the CAs act as the "renderer", so to speak, and having a second network, such as VGG, act as a distinguisher of patterns - providing the gradient necessary to produce a pattern of a certain style.</p>
 
-<p>Let's give this simple experiment a try - processing a pattern of interest through VGG, we pick an intermediate layer which is known to be a good representation of the "styles" involved and note the activations of the neurons. Now, we feedconnect the output of our Cellular Automata tointo VGG and backpropagate into the parameters of the automata.</p>
+<p>Let give this simple experiment a try: processing a pattern of interest through VGG, we pick an intermediate layer which is known to be a good representation of the "styles" involved and note the activations of the neurons. Now, we feed the output of our Cellular Automata to VGG and backpropagate into the parameters of the automata.</p>
+
+
+
 <p>Immediately notice that they produce coherent patterns in the style of our requested input image, and are able to learn these in very few steps.</p>
 
 <p>[CLICKABLE INTERACTIVE IMAGE GRAPHIC]</p>
@@ -32,11 +39,11 @@
 <figcaption>A pair of Zebra. Zebra are said to have unique stripes.</figcaption>
 </figure>
 
-<p>Some butterflies have remarkably lifelike eyes on their wings. Evolution has placed these there to trigger a response of fear in potential predators. It is likely that neither the predator nor the butterfly has a concept for what an eye is or does, or even less so any <a href='https://en.wikipedia.org/wiki/Theory_of_mind'>theory of mind</a> regarding each other, but the magic of evolutionary development has nonetheless reached a state where the butterfly ingeniously tricks predators into fearing a harmless bug instead of consuming it. </p>
+<p>Some butterflies have remarkably lifelike eyes on their wings. It&#39;s unlikely the butterflies are even aware of this incredible artwork on their own bodies. Evolution placed these there to trigger a response of fear in potential predators [citation]. It is likely that neither the predator nor the butterfly has a concept for what an eye is or what an eye does, or even less so any <a href='https://en.wikipedia.org/wiki/Theory_of_mind'>theory of mind</a> regarding the consciousness of the other, but evolutionary development has nonetheless reached a state where the butterfly ingeniously tricks predators into fearing a harmless bug instead of consuming it. </p>
 
 <p>Even more remarkable is the fact that the individual cells composing the butterfly's wings can self assemble into coherent, beautiful, shapes far larger than an individual cell - indeed a cell is on the order of 1e-...m while the features on the wings will grow to as large as 1e-...m. Communication over this distance implies a self-organization over a distance of millions of cells.</p>
 
-<p>In addition to style transfer -  a common approach to investigating neural networks (cite: OpenAI microscope) is to look at what inhibits or excites individual neurons in a network. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is's a large contemporary body of work on doing the same with neural networks. </p>
+<p>In addition to style transfer,  a common approach to investigating neural networks (cite: OpenAI microscope) is to look at what inhibits or excites individual neurons in a network. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is a large contemporary body of work on doing the same with neural networks. </p>
 
 <p>Luckily, we can explore this idea with minimal effort by simply taking our VGG implementation from before and exploring what happens if we are to generate a CA that excites a given neuron. </p>
 
@@ -58,7 +65,7 @@
 
 <h2 id='interesting-properties'>Interesting properties of solitons and their interactions.</h2>
 
-<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite common ly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li>
+<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li>
 <li></li>
 <li>Solitons can "divide" into two</li>
 <li>In textures that are composed of threads or lines, the thread grow in their respective directions and exhibit behaviour where they will join other threads, or grow around them. </li>
