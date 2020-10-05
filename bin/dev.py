@@ -11,6 +11,12 @@ else:
     from SimpleHTTPServer import SimpleHTTPRequestHandler, test
 import re
 
+# https://medium.com/@moreless/how-to-fix-python-ssl-certificate-verify-failed-97772d9dd14c 
+import ssl
+if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
+getattr(ssl, '_create_unverified_context', None)):
+    ssl._create_default_https_context = ssl._create_unverified_context
+
 def copy_byte_range(infile, outfile, start=None, stop=None, bufsize=16*1024):
     '''Like shutil.copyfileobj, but only copy a range of the streams.
     Both start and stop are inclusive.
@@ -43,6 +49,8 @@ def parse_byte_range(byte_range):
 
 def write_file(fname, fout, article_html):
     for s in open(fname) if (fname != "../article.html" or article_html is None) else article_html:
+        if not (isinstance(s, str)):
+            s = s.decode('utf-8')
         if "___MODELS___" in s:
             fout.write(s.replace("___MODELS___", str(glob.glob("*.json"))))
             continue
