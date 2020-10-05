@@ -2,9 +2,30 @@
 {% include contents.html %}
 {% include nextPrev.html %}
 <h2 id='introduction'>Introduction</h2>
-<p>The self-organizing systems series of articles has covered a number of topics so far - from generating stable and regenerating static images, to self-classification and modeling physical systems. Many of the interesting properties of these aforementioned systems is a result of the strong inductive prior we place on our system - having relatively simple rules occurring in parallel across a large number of individual cells. </p>
+<p>So far in this thread, we have covered a diverse array of topics - from the base case of generating stable, regenerating, static images, to self-classification and modeling physical systems with neural cellular automata. Many of the interesting properties of these models appear to be a direct result of the inductive prior imposed by using cellular automata - a system of individual agents all running the same learned simple rule. </p>
 
-<p>In this work we set out to investigate how CAs behave when they are used as a parametrization for input images to other neural networks. This work is strongly inspired by Differentiable Image Parametrizations.</p>
+<p>In this work we set out to investigate how CAs behave when they are used as a differentiable parameterization for input images to other neural networks. This work is strongly inspired by Differentiable Image Parametrizations.</p>
+<h2 id='feature-visualization'>Feature Visualization</h2>
+
+<p></p>
+<figure>
+<img src='images/butterfly_eye.jpg' style='width: 450px'>
+<figcaption>A pair of Zebra. Zebra are said to have unique stripes.</figcaption>
+</figure>
+
+<p>Some butterflies have remarkably lifelike eyes on their wings. It&#39;s unlikely the butterflies are even aware of this incredible artwork on their own bodies. Evolution placed these there to trigger a response of fear in potential predators [citation]. It is likely that neither the predator nor the butterfly has a concept for what an eye is or what an eye does, or even less so any <a href='https://en.wikipedia.org/wiki/Theory_of_mind'>theory of mind</a> regarding the consciousness of the other, but evolutionary development has nonetheless reached a state where the butterfly ingeniously tricks predators into fearing a harmless bug instead of consuming it. </p>
+
+<p>Even more remarkable is the fact that the individual cells composing the butterfly's wings can self assemble into coherent, beautiful, shapes far larger than an individual cell - indeed a cell is on the order of $1e-5m$ <d-cite key="Ohno2015-uj"></d-cite> while the features on the wings will grow to as large as $1e-3m$. Communication over this distance implies a self-organization over a distance of millions of cells.</p>
+
+<p>In addition to style transfer,  a common approach to investigating neural networks (cite: OpenAI microscope) is to look at what inhibits or excites individual neurons in a network. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is a large contemporary body of work on doing the same with neural networks. </p>
+
+<p>Luckily, we can explore this idea with minimal effort by simply taking our VGG implementation from before and exploring what happens if we are to generate a CA that excites a given neuron. </p>
+
+<p>[EYE GENERATING CA GRAPHIC]</p>
+
+<p>[TODO: diagram similar to diff param]</p>
+
+<p>We take the output of the CA after a certain number of iterations, and simpy use it as the input for a different network. There is a high-level equ</p>
 <h2 id='patterns-and'>Patterns and Textures</h2>
 <p></p>
 <figure>
@@ -31,27 +52,7 @@
 <p>[CLICKABLE INTERACTIVE IMAGE GRAPHIC]</p>
 
 <p>What's more interesting and not readily apparent in snapshots of batches is that the patterns are in fact not static. Taking a look at the video below, we see all manners of gradual motion. This is not entirely unexpected - in the definition of our experiments we do not place any constraints onwhich individual pixel values should be - instead we just want the overall output to approximate a pattern we chose through our target image. Given the many convolutional layers in VGG, the network likely does not depend much on the exact spatial placement of the pattern, but rather only onwith its presence.</p>
-<h2 id='feature-visualization'>Feature Visualization</h2>
 
-<p></p>
-<figure>
-<img src='images/butterfly_eye.jpg' style='width: 450px'>
-<figcaption>A pair of Zebra. Zebra are said to have unique stripes.</figcaption>
-</figure>
-
-<p>Some butterflies have remarkably lifelike eyes on their wings. It&#39;s unlikely the butterflies are even aware of this incredible artwork on their own bodies. Evolution placed these there to trigger a response of fear in potential predators [citation]. It is likely that neither the predator nor the butterfly has a concept for what an eye is or what an eye does, or even less so any <a href='https://en.wikipedia.org/wiki/Theory_of_mind'>theory of mind</a> regarding the consciousness of the other, but evolutionary development has nonetheless reached a state where the butterfly ingeniously tricks predators into fearing a harmless bug instead of consuming it. </p>
-
-<p>Even more remarkable is the fact that the individual cells composing the butterfly's wings can self assemble into coherent, beautiful, shapes far larger than an individual cell - indeed a cell is on the order of 1e-...m while the features on the wings will grow to as large as 1e-...m. Communication over this distance implies a self-organization over a distance of millions of cells.</p>
-
-<p>In addition to style transfer,  a common approach to investigating neural networks (cite: OpenAI microscope) is to look at what inhibits or excites individual neurons in a network. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is a large contemporary body of work on doing the same with neural networks. </p>
-
-<p>Luckily, we can explore this idea with minimal effort by simply taking our VGG implementation from before and exploring what happens if we are to generate a CA that excites a given neuron. </p>
-
-<p>[EYE GENERATING CA GRAPHIC]</p>
-
-<p>[TODO: diagram similar to diff param]</p>
-
-<p>We take the output of the CA after a certain number of iterations, and simpy use it as the input for a different network. There is a high-level equ</p>
 <h2 id='solitons-lenia'>Solitons, Lenia, and Smoothlife</h2>
 <p>The motion of waves propagating through a medium can be described using the "classical" wave equation. </p>
 
@@ -62,7 +63,6 @@
 <p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render from DTD, or even in inception, consist of well defined structures such as circles (link polka dot or eyes) or polygons (link bee-hive). We consider such structures to be functionally equivalent to solitons in the world of waves and refer to them as such. Solitons are also used to describe the structures found in "Lenia" by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.</p>
 
 <p>In the case of pattern generation with CAs, the most curious aspect of the resulting CA is how it tends to find a solution to generating the pattern that is often similar to  a potential physical process that would generate such a pattern. This concept is somewhat ill defined and hard to quantitatively measure, but we will attempt to demonstrate the idea through a number of examples. </p>
-
 <h2 id='interesting-properties'>Interesting properties of solitons and their interactions.</h2>
 
 <ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li>
