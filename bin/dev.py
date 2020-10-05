@@ -42,7 +42,7 @@ def parse_byte_range(byte_range):
     return first, last
 
 def write_file(fname, fout, article_html):
-    for s in open(fname) if (fname != "article.html" or article_html is None) else article_html:
+    for s in open(fname) if (fname != "../article.html" or article_html is None) else article_html:
         if "___MODELS___" in s:
             fout.write(s.replace("___MODELS___", str(glob.glob("*.json"))))
             continue
@@ -68,6 +68,7 @@ def build():
         req.add_header('Accept', 'application/vnd.github.v3.raw')
         article_html = urlopen(req)
         if article_html.getcode() != 200:
+          print('github response was not 200')
           article_html = None
     except Exception as e:
         article_html = None
