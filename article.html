@@ -98,13 +98,14 @@
 <video src='videos/eyes.mov' autoplay loop muted style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4c_439</b> in VGG.</figcaption>
 </figure>
-<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may decay. </li>
-<li>Solitons can "divide" into two</li></ul>
+<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may cause one of both of them to decay.</li>
+<li>Solitons can "divide" into two complete new solitons.</li></ul>
 <p></p>
-<ul><li>In textures that are composed of threads or lines, the threads grow in their respective directions and will join other threads, or grow around them, as required. </li>
-<li></li>
-<li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when </li>
-<li></li></ul>
+<figure>
+<video src='videos/threads.mov' autoplay loop muted style='width: 450px'></video>
+<figcaption>An NCA trained to excite <b>mixed4b_454</b> in VGG.</figcaption>
+</figure>
+<ul><li>In textures that are composed of threads or lines, or in certain excitations of VGG neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</li></ul>
 
 
 <h3>An Aside: Solitons, Lenia, and Smoothlife</h3>
@@ -118,27 +119,19 @@
 
 <p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render in the pattern-generation experiment, as well as in  the inception experiment, consist of well defined structures such as circles or polygons . We consider such structures to be functionally equivalent to solitons and refer to them as such. Such a classification is inspired by solitons referred to in "Lenia" by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.</p>
 <h2 id='hidden-states'>Hidden states</h2>
+<p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells or even emit different chemical signals to diffuse over the local substrate. </p>
+
 <p>There are various ways to visualize communication channels in real cells. One of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
 
-<p>As luck would have it - we can do something very similar with our Cellular Automata. Recall that our CA model consists of three visible channels, with the rest being treated as latent channels visible to the update step but excluded from any loss function. . The figure below visualizes the magnitudes of these hidden channels when mapped to intensity in RGB. </p>
+<p>As luck would have it - we can do something very similar with our Cellular Automata. Recall that our CA model consists of three visible channels, with the rest being treated as latent channels visible to the update step but excluded from any loss function. The video below visualizes the magnitudes of these hidden channels when mapped to intensity in RGB, for an inception NCA. Recall that hidden channels can be considered to be "floating" (to borrow a term from circuit theory) - they are not being pulled to any specific final state or intermediate state by the loss and instead converge to some form a dynamical system assisting the cell fulfill its "true" objective. This means there is no pre-defined assignment of different roles or meaning to different hidden channels, and there is almost certainly redundancy and correlation between different hidden channels. Such correlation may not be visible when applying an arbitrary grouping of channels in order to visualize them in RGB. However, even this simple analysis yields some interesting insights.</p>
 
-<p>We immediately noticed several interesting aspects.</p>
+<p>	</p>
+<figure>
+<video src='videos/threads_hidden.mov' autoplay loop muted style='width: 450px'></video>
+<figcaption>An NCA trained to excite <b>mixed4b_70</b> in VGG.</figcaption>
+</figure>
 
-<p>This means the hidden channels can be considered to be "floating" (to borrow a term from circuits) - they are not being pulled to any specific final state or intermediate state and instead converge to some dynamical system assisting the cell fulfill its "true" objective</p>
-
-<p>The flow of gradient back through the CA enters the CA at its final iteration. This suggests that final dynamics of the hidden state must be strongly influenced by the first gradient update it receives "through" this final iteration. Indeed we can consider this to be a dynamical system within a dynamical system. CA back through the preceding iterations gives us a clue as to what aspects of the CA's training may influence what the hidden state dynamical system looks like. </p>
-
-<p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells or even emit different chemical signals to diffuse over the local substrate (citation needed + cleanup for all these). </p>
-
-<p>Visualization</p>
-
-<ul><li>Hidden state analysis yields some interesting results. For instance - certain anomalies in patterns will only appear after some time (eyes) and you can see distinct activity in the regions where they are about to appear. </li>
-<li>Hidden states for automata trained from the same ancestors have similar magnitudes.</li>
-<li>Visualization concept:</li><ul>
-<li>Show hidden state alongside the the RGB state, and highlight the neural activity in the hidden state with a red circle or "highlight" effect (dark overlay + lightened focus)</li></ul></ul>
-
-<p>References:</p>
-<ul><li><a href='http://www.robots.ox.ac.uk/~vgg/publications/2014/Cimpoi14/cimpoi14.pdf'>Describing Textures in the Wild</li></ul>
+<p>We immediately notice several interesting aspects. The first is that the generated visual seems to have converged to having predominantly two &quot;directions&quot; for the visible threads - the two diagonals. We see that each diagonal appears in two different colours in the bottom left hidden state visualization - an off-pink for one and yellow-ish colour for the other. This suggests that the NCA is using state information to encode directionality for each of these threads - perhaps so the cells in the &quot;middle&quot; of the thread know which direction they are to grow or move in.</p>
 
 </d-article>
 <d-appendix>
