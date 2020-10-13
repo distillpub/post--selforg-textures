@@ -71,6 +71,7 @@
 <p>Here we see one of the authors&#39; favourite patterns - a simple geometric &quot;weave&quot;. Again, we notice the NCA seems to have learned an algorithm for producing this pattern. Each &quot;thread&quot; alternatively joins or detaches from other threads in order to produce the final pattern. This is strikingly similar to what one would attempt to implement in the case of being asked to programmatically generate the above pattern - some algorithm to stochastically weave threads together.</p>
 
 
+
 <figure>
 <video src='videos/lines.mov' autoplay loop muted style='width: 450px'></video>
 <figcaption>An NCA trained to create a pattern in the style of <b>banded_0037.jpg</b>.</figcaption>
@@ -148,6 +149,9 @@
 </figure>
 
 <p>We immediately notice several interesting aspects. The first is that the generated visual seems to have converged to having predominantly two &quot;directions&quot; for the visible threads - the two diagonals. We see that each diagonal appears in two different colours in the bottom left hidden state visualization - an off-pink for one and yellow-ish colour for the other. This suggests that the NCA is using state information to encode directionality for each of these threads - perhaps so the cells in the &quot;middle&quot; of the thread know which direction they are to grow or move in.</p>
+<h2 id='conclusion'>Conclusion</h2>
+<p>Using NCAs as differentiable renderers, with certain style templates, or neuronal excitations as targets produces some very compelling results as well as very interesting and unexpected behaviour. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern - the NCA seems to have inductive bias for treating &quot;objects&quot; in the pattern as individual objects (bubbles, for instance), letting them move freely across the space. The authors theorize that the NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to result in an algorithm to ensure consistency and robustness at a higher level. </p>
+
 
 </d-article>
 <d-appendix>
