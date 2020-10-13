@@ -45,6 +45,10 @@
 <p>Such behaviour is not entirely unlike what one would expect in a hand-engineered algorithm to produce a consistent grid with local communication.</p>
 
 <p></p>
+<figure>
+<video src=videos/bubbles.mov' style='width: 450px'>
+<figcaption>An NCA trained to create a pattern in the style of <b>bubbly0101.jpg</b>.</figcaption>
+</figure>
 
 <p>In this video, the NCA has learned to reproduce a texture based off a template of clear bubbles on a blue background. One of the most interesting behaviours we observe is that the density of bubbles remains fairly constant. If we re-initialize the grid states, or interactively destroy states, we a multitude of bubbles &quot;forming&quot;. However - as soon as bubbles get too close to each other, one of them will spontaneously collapse and disappear, ensuring a constant density. We regard these bubbles as &quot;solitons&quot; in the solution space of our NCA - a concept we will discuss and investigate at length in a bit.</p>
 
@@ -68,7 +72,10 @@
 <p>We can explore this idea with minimal effort by taking our VGG implementation from when we explored pattern generation, and exploring what happens if we task the NCA to enter a state that excites a given neuron in VGG.</p>
 
 <p></p>
-
+<figure>
+<video src=videos/eyes_vgg.mov' style='width: 450px'>
+<figcaption>An NCA trained to excite <b>mixed4a_472</b> in VGG.</figcaption>
+</figure>
 
 
 <h4>Model: </h4>
