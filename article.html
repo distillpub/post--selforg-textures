@@ -21,6 +21,7 @@
 <p>Our first experiment is to investigate the behaviour our Neural CAs learn when tasked with a classic style-transfer task. Below we summarize the experimental setup. </p>
 
 <p>As in Differentiable Parametrizations, we employ the building-block aspect of differentiable models to plug in our Cellular Automata as the parametrization layer for an image, or output, we are trying to &quot;stylize&quot;. In this case, instead of having an image we are trying to re-style in a new way, our starting point is completely unconstrained - it&#39;s the raw output of an NCA with random weights. We effectively use the NCAs as the "renderer", so to speak, and VGG as a distinguisher of patterns - providing the gradient necessary to produce a pattern of a certain style.</p>
+<h3>Experiment: Pattern Generation</h3>
 <h4>Model: </h4>
 <p>We use a model effectively identical to the one in Growing CA, complete with built-in quantization of weights, and the batch pool mechanism to approximate long-term training. One alteration is the addition of a discretized laplacian filter in addition to the sobel operator filter during the <strong>perception</strong> stage. The motivation is that certain processes, such as those in the reaction-diffusion family, are functions of the laplacian and we wish for our neural network to have the ability to do the same. Qualitatively, this led to better convergence and smoother patterns.</p>
 <h4>Loss function: </h4>
@@ -81,7 +82,7 @@
 <figcaption>An NCA trained to excite <b>mixed4a_472</b> in VGG.</figcaption>
 </figure>
 
-
+<h3>Experiment: Feature Visualization</h3>
 <h4>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation.</p>
 <h4>Loss function: </h4>
@@ -90,6 +91,17 @@
 <p>There is no explicit dataset for this task. VGG is trained on ImageNet. The layers and neurons we chose to excite are sampled qualitatively from OpenAI Microscope.</p>
 <h4>Results:</h4>
 <p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions - i.e. most resulting NCAs don&#39;t stay still.</p>
+
+<h3>Interesting behaviours of inception-solitons</h3>
+
+<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li>
+<li></li>
+<li>Solitons can "divide" into two</li>
+<li>In textures that are composed of threads or lines, the thread grow in their respective directions and exhibit behaviour where they will join other threads, or grow around them. </li>
+<li></li>
+<li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when </li>
+<li></li></ul>
+
 
 <h3>An Aside: Solitons, Lenia, and Smoothlife</h3>
 <p>The motion of waves propagating through a medium can be described using the "classical" wave equation. </p>
@@ -101,16 +113,7 @@
 <p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies - a phenomenon referred to as a "group" or a "packet". Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe real-world waves, such as waves in water, light waves propagating, or sound, we have somewhat more complex partial differential equations governing their motion. These waves all share a common property - that waves of different frequencies will travel at different speeds. "Speed" in such a context is a tricky thing to define - however in this case we are referring to the speed of any single given wave - how fast its peak travels in space. When waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience "dispersion" - the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a "soliton" - as it describes a wave packet which exactly retains its shape during propagation.</p>
 
 <p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render in the pattern-generation experiment, as well as in  the inception experiment, consist of well defined structures such as circles or polygons . We consider such structures to be functionally equivalent to solitons and refer to them as such. Such a classification is inspired by solitons referred to in "Lenia" by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.. </p>
-<h3>Interesting behaviours of inception-solitons</h3>
-
-<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li>
-<li></li>
-<li>Solitons can "divide" into two</li>
-<li>In textures that are composed of threads or lines, the thread grow in their respective directions and exhibit behaviour where they will join other threads, or grow around them. </li>
-<li></li>
-<li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when </li>
-<li></li>
-<li></li></ul>
+<ul><li></li></ul>
 <h2 id='hidden-states'>Hidden states</h2>
 <p>There are various ways to visualize these communication channels - but one of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
 
