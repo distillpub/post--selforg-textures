@@ -69,6 +69,14 @@
 </figure>
 
 <p>Here we see one of the authors&#39; favourite patterns - a simple geometric &quot;weave&quot;. Again, we notice the NCA seems to have learned an algorithm for producing this pattern. Each &quot;thread&quot; alternatively joins or detaches from other threads in order to produce the final pattern. This is strikingly similar to what one would attempt to implement in the case of being asked to programmatically generate the above pattern - some algorithm to stochastically weave threads together.</p>
+
+
+<figure>
+<video src='videos/lines.mov' autoplay loop muted style='width: 450px'></video>
+<figcaption>An NCA trained to create a pattern in the style of <b>banded_0037.jpg</b>.</figcaption>
+</figure>
+
+<p>This NCA also exhibits an algorithm for solving consistency in a striped pattern. The seams in ill-fitting stripes travel up, or down, the stripe, until either they merge to form a single straight stripe, or a stripe shrinks and disappears. Were this to be implemented algorithmically with local communication, it&#39;s not infeasible that a similar algorithm for finding consistency would be used.</p>
 <h2 id='feature-visualization'>Feature Visualization</h2>
 
 <p></p>
@@ -107,14 +115,13 @@
 <video src='videos/eyes.mov' autoplay loop muted style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4c_439</b> in VGG.</figcaption>
 </figure>
-<ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may cause one of both of them to decay.</li>
-<li>Solitons can "divide" into two complete new solitons.</li></ul>
+<p>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may cause one of both of them to decay. We also observe that solitons can "divide" into two complete new solitons.</p>
 <p></p>
 <figure>
 <video src='videos/moving_thread.mov' autoplay loop muted style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4b_454</b> in VGG.</figcaption>
 </figure>
-<ul><li>In textures that are composed of threads or lines, or in certain excitations of VGG neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</li></ul>
+<p>In textures that are composed of threads or lines, or in certain excitations of VGG neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
 
 
 <h3>An Aside: Solitons, Lenia, and Smoothlife</h3>
