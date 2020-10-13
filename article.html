@@ -3,9 +3,9 @@
 {% include nextPrev.html %}
 
 
-<p>We have now seen Neural CAs express a very diverse array of learned behaviours - from being capable of generating stable, regenerating, static images, to self-classification and modeling simple physical systems, to self-classifying shapes. Many of the interesting properties of these models appear to be a direct result of the inductive prior imposed by using cellular automata - a system of individual agents all running the same learned simple rule. Because of the massively parallel and inherently degenerate nature of the way they solve tasks - they tend to exhibit remarkable stability and generalize well to unseen situations. In short - they seem to learn behaviours as opposed to approximations of functions. Take the example of damage in &quot;Growing CA&quot; - despite being exposed to only certain types of damage during training, the cells learned to regenerate from almost any type of damage. </p>
+<p>ons <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite> expWe have now seen Neural CAs express a very diverse array of learned behaviours - from being capable of generating stable, regenerating, static images, to self-classification and modeling simple physical systems, to self-classifying shapes. Many of the interesting properties of these models appear to be a direct result of the inductive prior imposed by using cellular automata - a system of individual agents all running the same learned simple rule. Because of the massively parallel and inherently degenerate nature of the way they solve tasks - they tend to exhibit remarkable stability and generalize well to unseen situations. In short - they seem to learn behaviours as opposed to approximations of functions. Take the example of damage in &quot;Growing CA&quot; - despite being exposed to only certain types of damage during training, the cells learned to regenerate from almost any type of damage. </p>
 
-<p>In this work we set out to investigate and explore just how CAs learn a behavior. We use a (now somewhat) old trick - employing them as differentiable parameterizations [[Mordvintsev2018-dc]].</p>
+<p>In this work we set out to investigate and explore just how CAs learn a behavior. We use a (now somewhat) old trick - employing them as differentiable parameterizations <d-cite key="Mordvintsev2018-dc"></d-cite>.</p>
 
 <h2 id='patterns-textures'>Patterns, textures and physical processes</h2>
 <p></p>
@@ -16,15 +16,16 @@
 
 <p>Zebra stripes consist of a characteristic pattern. Ask almost anyone to identify zebra stripes in a set of images, and they&#39;ll have no trouble. Ask them to describe what zebra stripes look like, and they will gladly tell you that they are stripes of varying shape and direction, alternating in black and white. At the same time, it is said that no two zebras have identical stripes<d-footnote> Perhaps apocryphal, but the authors would wager it true were you to pedantically measure every molecule on the surface of said zebra. Point is - "zebra stripes" - as a concept in human understanding - refers to the general structure of a black and white striped pattern, and not to a specific mapping from location to colour.</d-footnote>. One can then draw the conclusion that evolution has programmed the cells responsible for creating the Zebra pattern to generate a pattern of a certain quality, with certain characteristics, as opposed to programming them with the blueprints for an exact bitmap of the edges and locations of stripes to be moulded to the surface of the Zebra's body. </p>
 
-<p>Patterns and textures themselves, as terms, are ill-defined concepts. Cambridge English dictionary defines a pattern as &quot;any <a href='https://dictionary.cambridge.org/dictionary/english/regularly'>regularly</a> <a href='https://dictionary.cambridge.org/dictionary/english/repeated'>repeated</a> <a href='https://dictionary.cambridge.org/dictionary/english/arrangement'>arrangement</a>, <a href='https://dictionary.cambridge.org/dictionary/english/especially'>especially</a> a <a href='https://dictionary.cambridge.org/dictionary/english/design'>design</a> made from <a href='https://dictionary.cambridge.org/dictionary/english/repeated'>repeated</a> <a href='https://dictionary.cambridge.org/dictionary/english/line'>lines</a>, <a href='https://dictionary.cambridge.org/dictionary/english/shape'>shapes</a>, or <a href='https://dictionary.cambridge.org/dictionary/english/colour'>colours</a> on a <a href='https://dictionary.cambridge.org/dictionary/english/surface'>surface</a>&quot;. This is all good and well, but this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A coloured fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of strands pointing in random directions with random colour, and no discernable regularity to the pattern. The famous penrose tilings do not repeat (at least in the sense that they are not translationally invariant), but show them to anyone and they&#39;ll describe them as a pattern or a texture. What the authors believe is that patterns, at least in nature, are often the outputs of locally interacting processes that may or may not be stochastic in nature, but are often based upon fairly simple rules.</p>
+<p>Patterns and textures themselves, as terms, are ill-defined concepts. Cambridge English dictionary defines a pattern as &quot;any regularly repeated arrangement, especially a design made from repeated lines, shapes, or colours on a surface&quot;. This is all good and well, but this pseudo definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A coloured fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of strands pointing in random directions with random colour, and no discernable regularity to the pattern. The famous penrose tilings do not repeat (at least in the sense that they are not translationally invariant), but show them to anyone and they&#39;ll describe them as a pattern or a texture. What the authors believe is that patterns, at least in nature, are often the outputs of locally interacting processes that may or may not be stochastic in nature, but are often based upon fairly simple rules.</p>
 
 <p>Our first experiment is to investigate the behaviour our Neural CAs learn when tasked with a classic style-transfer task. Below we summarize the experimental setup. </p>
 
 <p>As in Differentiable Parametrizations, we employ the building-block aspect of differentiable models to plug in our Cellular Automata as the parametrization layer for an image, or output, we are trying to &quot;stylize&quot;. In this case, instead of having an image we are trying to re-style in a new way, our starting point is completely unconstrained - it&#39;s the raw output of an NCA with random weights. We effectively use the NCAs as the "renderer", so to speak, and VGG as a distinguisher of patterns - providing the gradient necessary to produce a pattern of a certain style.</p>
+<h3>Experiment: Pattern Generation</h3>
 <h4>Model: </h4>
 <p>We use a model effectively identical to the one in Growing CA, complete with built-in quantization of weights, and the batch pool mechanism to approximate long-term training. One alteration is the addition of a discretized laplacian filter in addition to the sobel operator filter during the <strong>perception</strong> stage. The motivation is that certain processes, such as those in the reaction-diffusion family, are functions of the laplacian and we wish for our neural network to have the ability to do the same. Qualitatively, this led to better convergence and smoother patterns.</p>
 <h4>Loss function: </h4>
-<p>Differentiable Parametrizations [[Mordvintsev_Pezzotti_Schubert_Olah_2018]] explains why VGG is the most commonly used network for implementing style-transfer. We use VGG for the same reason. We start with a template image, $\vec{x}$, we feed into VGG. We then collect statistics from certain layers ($block\{1...6\}\_conv1, block4\_conv2$) in the form of the raw activation values of the neurons in these layers. Finally, we feed the output, after between 32 and 64 iterations, of our Neural CA into VGG. Our loss is simply the $L_2$ distance between the activations of these neurons with the NCA input and their activations with the template image. We keep the weights of VGG frozen, and use ADAM <d-cite key="adam"></d-cite> to update the weights of the NCA.</p>
+<p>Differentiable Parametrizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite> explains why VGG is the most commonly used network for implementing style-transfer. We use VGG for the same reason. We start with a template image, $\vec{x}$, we feed into VGG. We then collect statistics from certain layers (<i>block{1...6}_conv1, block4_conv2</i>) in the form of the raw activation values of the neurons in these layers. Finally, we feed the output, after between 32 and 64 iterations, of our Neural CA into VGG. Our loss is simply the $L_2$ distance between the activations of these neurons with the NCA input and their activations with the template image. We keep the weights of VGG frozen, and use ADAM <d-cite key="adam"></d-cite> to update the weights of the NCA.</p>
 <h4>Dataset: </h4>
 <p>The template images for this dataset are from the Oxford Describable Textures Dataset <d-cite key="dtd"></d-cite>.  The aim of this dataset was to provide a training and testing set for algorithms to recognize textures. </p>
 <h4>Results:</h4>
@@ -35,6 +36,10 @@
 <p>We believe that finding temporally aligned solutions is equivalent to finding an algorithm, or process, that generates the template pattern. Below we demonstrate some exciting behaviours observed when training the NCA on different template images.  </p>
 
 <p></p>
+<figure>
+<video src='videos/grid.mov' autoplay loop muted style='width: 450px'></video>
+<figcaption>An NCA trained to create a pattern in the style of <b>chequered_0121.jpg</b>.</figcaption>
+</figure>
 
 <p>Here, we see that the NCA is trained using a template image of a simple black and white grid. </p>
 <p>We notice that: </p>
@@ -46,7 +51,7 @@
 
 <p></p>
 <figure>
-<video src='videos/bubbles.mov' style='width: 450px'>
+<video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></video>
 <figcaption>An NCA trained to create a pattern in the style of <b>bubbly0101.jpg</b>.</figcaption>
 </figure>
 
@@ -59,7 +64,7 @@
 
 <p></p>
 <figure>
-<img src='images/butterfly_eye.jpg' style='width: 450px'>
+<img src='images/butterfly_eye.jpg' style='width: 450px'></img>
 <figcaption>A butterfly with an "eye-spot" on the wings.</figcaption>
 </figure>
 
@@ -73,28 +78,20 @@
 
 <p></p>
 <figure>
-<video src='videos/eyes_vgg.mov' style='width: 450px'>
+<video src='videos/eyes_vgg.mov' autoplay loop muted style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4a_472</b> in VGG.</figcaption>
 </figure>
 
-
+<h3>Experiment: Feature Visualization</h3>
 <h4>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation.</p>
 <h4>Loss function: </h4>
-<p>We use VGG, as before. Our loss maximizes the activations of the chosen neurons in VGG, when evaluated output of the NCA. We add an auxiliary loss to encouragethe outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of VGG frozen, and use ADAM <d-cite key="adam"></d-cite> to update the weights of the NCA.</p>
+<p>We use VGG, as before. Our loss maximizes the activations of the chosen neurons in VGG, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of VGG frozen, and use ADAM <d-cite key="adam"></d-cite> to update the weights of the NCA.</p>
 <h4>Dataset: </h4>
 <p>There is no explicit dataset for this task. VGG is trained on ImageNet. The layers and neurons we chose to excite are sampled qualitatively from OpenAI Microscope.</p>
 <h4>Results:</h4>
 <p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions - i.e. most resulting NCAs don&#39;t stay still.</p>
 
-<h3>An Aside: Solitons, Lenia, and Smoothlife</h3>
-<p>The motion of waves propagating through a medium can be described using the "classical" wave equation. </p>
-
-<p>$\ddot u &#x3D; c^2 \nabla^2 u ,$</p>
-
-<p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies - a phenomenon referred to as a "group" or a "packet". Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe real-world waves, such as waves in water, light waves propagating, or sound, we have somewhat more complex partial differential equations governing their motion. These waves all share a common property - that waves of different frequencies will travel at different speeds. "Speed" in such a context is a tricky thing to define - however in this case we are referring to the speed of any single given wave - how fast its peak travels in space. When waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience "dispersion" - the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a "soliton" - as it describes a wave packet which exactly retains its shape during propagation.</p>
-
-<p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render in the pattern-generation experiment, as well as in  the inception experiment, consist of well defined structures such as circles or polygons . We consider such structures to be functionally equivalent to solitons and refer to them as such. Such a classification is inspired by solitons referred to in "Lenia" by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.. </p>
 <h3>Interesting behaviours of inception-solitons</h3>
 
 <ul><li>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the Inception renderings. Two solitons approaching each other too closely may decay. </li>
@@ -103,8 +100,20 @@
 <li>In textures that are composed of threads or lines, the thread grow in their respective directions and exhibit behaviour where they will join other threads, or grow around them. </li>
 <li></li>
 <li>Solitons can arrange themselves in a regular pattern, such as a grid or a euclidean tiling of hexagons. They will merge and divide accordingly until they achieve a state of consensus across the whole grid. This is especially visible when </li>
-<li></li>
 <li></li></ul>
+
+
+<h3>An Aside: Solitons, Lenia, and Smoothlife</h3>
+<p>The motion of waves propagating through a medium can be described using the "classical" wave equation. </p>
+
+<figure>
+<p>$\ddot u &#x3D; c^2 \nabla^2 u$</p>
+</figure>
+
+<p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies - a phenomenon referred to as a "group" or a "packet". Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe real-world waves, such as waves in water, light waves propagating, or sound, we have somewhat more complex partial differential equations governing their motion. These waves all share a common property - that waves of different frequencies will travel at different speeds. "Speed" in such a context is a tricky thing to define - however in this case we are referring to the speed of any single given wave - how fast its peak travels in space. When waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience "dispersion" - the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a "soliton" - as it describes a wave packet which exactly retains its shape during propagation.</p>
+
+<p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render in the pattern-generation experiment, as well as in  the inception experiment, consist of well defined structures such as circles or polygons . We consider such structures to be functionally equivalent to solitons and refer to them as such. Such a classification is inspired by solitons referred to in "Lenia" by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.. </p>
+<ul><li></li></ul>
 <h2 id='hidden-states'>Hidden states</h2>
 <p>There are various ways to visualize these communication channels - but one of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
 
