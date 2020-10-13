@@ -31,7 +31,7 @@ export function createDemo(divId, modelsSet) {
     modelname: "mixed",
     brushSize: 20,
     autoFill: true,
-    debug: false,
+    debug: true,
   };
   let gui = null;
 
