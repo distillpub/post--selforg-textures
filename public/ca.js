@@ -113,6 +113,7 @@ const PREFIX = `
     ${defInput('u_input')}
 
     uniform float u_angle, u_alignment;
+    uniform float u_hexGrid;
     
     mat2 rotate(float ang) {
         float s = sin(ang), c = cos(ang);
@@ -150,6 +151,17 @@ const PROGRAMS = {
     const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
     const mat3 sobelY = mat3(-1.0,-2.0,-1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0)/8.0;
     const mat3 gauss = mat3(1.0, 2.0, 1.0, 2.0, 4.0-16.0, 2.0, 1.0, 2.0, 1.0)/8.0;
+    const mat3 sobelXhex = mat3( 0.0,    -1.0, 1.0, 
+                                       -2.0, 0.0, 2.0, 
+                                         -1.0, 1.0,        0.0)/8.0;
+
+    const mat3 sobelYhex = mat3( 0.0,    -2.0,-2.0, 
+                                        0.0, 0.0, 0.0, 
+                                          2.0, 2.0,        0.0)/8.0;
+
+    const mat3 gaussHex = mat3(0.0,       2.0, 2.0, 
+                                       2.0, 4.0-16.0, 2.0, 
+                                          2.0, 2.0,        0.0)/8.0;
 
     vec4 conv3x3(vec2 xy, float inputCh, mat3 filter) {
         vec4 a = vec4(0.0);
@@ -176,13 +188,13 @@ const PROGRAMS = {
         if (filterBand < 0.5) {
             setOutput(u_input_read(xy, inputCh));
         } else if (filterBand < 2.5) {
-            vec4 dx = conv3x3(xy, inputCh, sobelX);
-            vec4 dy = conv3x3(xy, inputCh, sobelY);
+            vec4 dx = conv3x3(xy, inputCh, sobelX*(1.0-u_hexGrid) + sobelXhex*u_hexGrid);
+            vec4 dy = conv3x3(xy, inputCh, sobelY*(1.0-u_hexGrid) + sobelYhex*u_hexGrid);
             vec2 dir = getCellDirection(xy);
             float s = dir.x, c = dir.y;
             setOutput(filterBand < 1.5 ? dx*c-dy*s : dx*s+dy*c);
         } else {
-            setOutput(conv3x3(xy, inputCh, gauss));
+            setOutput(conv3x3(xy, inputCh, gauss*(1.0-u_hexGrid) + gaussHex*u_hexGrid));
         }
     }`,
     dense: `
@@ -239,7 +251,11 @@ const PROGRAMS = {
 
     void main() {
       vec2 xy = getOutputXY();
-      vec4 state = u_input_readUV(uv);
+    //   if (xy.y>100.0 && xy.y < 150.0) {
+    //       xy.x -= 1.0;
+    //   }
+      float ch = getOutputChannel();
+      vec4 state = u_input_read(xy, ch); //u_input_readUV(uv);
       vec4 update = vec4(0.0);
       #ifdef SPARSE_UPDATE
         vec4 shuffleInfo = texture2D(u_unshuffleTex, fract((xy-u_shuffleOfs)/u_output.size));
@@ -293,25 +309,49 @@ const PROGRAMS = {
         return -sqrt(d.x)*sign(d.y);
     }
 
+    // https://www.shadertoy.com/view/Xljczw
+    // https://www.shadertoy.com/view/MlXyDl
+    // returns xy - in cell pos, zw - skewed cell id
+    vec4 getHex(vec2 u) {
+        vec2 s = vec2(1., mix(2.0, 1.732, u_hexGrid));
+        vec2 p = vec2(0.5*u_hexGrid, 0.5);
+        vec2 a = mod(u    ,s)*2.-s;
+        vec2 b = mod(u+s*p,s)*2.-s;
+        vec2 ai = floor(u/s);
+        vec2 bi = floor(u/s+p);
+        // skewed coords
+        ai = vec2(ai.x-ai.y*u_hexGrid, ai.y*2.0+1.0);
+        bi = vec2(bi.x-bi.y*u_hexGrid, bi.y*2.0);
+        return dot(a,a)<dot(b,b) ? vec4(a, ai) : vec4(b, bi);    
+    }
+    
+
     void main() {
         vec2 xy = vec2(uv.x, 1.0-uv.y);
         if (u_raw > 0.5) {
             gl_FragColor = texture2D(u_input_tex, xy);
             gl_FragColor.a = 1.0;
         } else {
+
             xy = (xy + vec2(0.5)*(u_zoom-1.0))/u_zoom;
             xy *= u_input.size;
+            vec2 fp = 2.0*fract(xy)-1.0;
+
+            if (true) { //u_hexGrid > 0.0) {
+                vec4 r = getHex(xy-u_input.size*0.5);
+                xy = r.zw+u_input.size*0.5;
+                fp = r.xy;
+            }
 
             vec3 cellRGB = u_input_read(xy, 0.0).rgb/2.0+0.5;
             vec3 rgb = cellRGB;
-            if (4.0 < u_zoom) {
-                vec2 fp = (mod(xy, 1.0)-vec2(0.5))*2.0;
+            if (3.0 < u_zoom) {
                 vec2 dir = getCellDirection(floor(xy)+0.5);
                 float s = dir.x, c = dir.y;
                 fp = mat2(c, s, -s, c) * fp;    
                 float r = length(fp);
-                float fade = clip01((u_zoom-4.0)/4.0);
-                float m = 1.0-min(r*r*r, 1.0)*fade;
+                float fade = clip01((u_zoom-3.0)/3.0);
+                float m = 1.0;//1.0-min(r*r*r, 1.0)*fade;
                 rgb *= m;
                 if (12.0 < u_zoom) {
                     float ang = atan(-fp.x, fp.y)/(2.0*PI)+0.5;
@@ -415,6 +455,7 @@ export class CA {
         this.perceptionCircle = 0.0;
         this.arrowsCoef = 0.0;
         this.visMode = 'color';
+        this.hexGrid = false;
  
         this.layers = [];
         this.setWeights(models);
@@ -431,9 +472,10 @@ export class CA {
         if (gui) {
             gui.add(this, 'rotationAngle').min(0.0).max(360.0);
             gui.add(this, 'alignment', { cartesian: 0, polar: 1, bipolar: 2 }).listen();
-            gui.add(this, 'fuzz').min(0.0).max(128.0);
-            gui.add(this, 'perceptionCircle').min(0.0).max(1.0);
-            gui.add(this, 'visMode', visNames);
+            //gui.add(this, 'fuzz').min(0.0).max(128.0);
+            //gui.add(this, 'perceptionCircle').min(0.0).max(1.0);
+            //gui.add(this, 'visMode', visNames);
+            gui.add(this, 'hexGrid');
         }
 
         this.clearCircle(0, 0, 10000);
@@ -492,7 +534,7 @@ export class CA {
         if (stage == 'all' || stage == 'perception') {
             this.runLayer(self.progs.perception, this.buf.perception, {
                 u_input: this.buf.state, u_angle: this.rotationAngle / 180.0 * Math.PI,
-                u_alignment: this.alignment
+                u_alignment: this.alignment, u_hexGrid: this.hexGrid
             });
         }
         let inputBuf = this.buf.perception;
@@ -617,7 +659,9 @@ export class CA {
             u_angle: this.rotationAngle / 180.0 * Math.PI,
             u_alignment: this.alignment,
             u_perceptionCircle: this.perceptionCircle,
-            u_arrows: this.arrowsCoef};
+            u_arrows: this.arrowsCoef,
+            u_hexGrid: this.hexGrid,
+        };
         let inputBuf = this.buf.state;
         if (this.visMode != 'color') {
             inputBuf = this.buf[this.visMode];

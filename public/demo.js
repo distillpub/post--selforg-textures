@@ -32,6 +32,7 @@ export function createDemo(divId, modelsSet) {
     brushSize: 20,
     autoFill: true,
     debug: true,
+    zoom: 1.0,
   };
   let gui = null;
 
@@ -87,15 +88,10 @@ export function createDemo(divId, modelsSet) {
     if (!params.debug) {
       dat.GUI.toggleHide();
     }
-    gui.add(params, 'modelSet', modelsSet).onChange(updateCA);
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
-    gui.add(params, 'model').options(brush2idx).onChange(() => {
-      if (params.autoFill)
-        ca.paint(0, 0, 10000, params.model, [0, 0]);
-    });
     params.modelname = models.model_names[params.model];
-    gui.add(params, 'autoFill')
     gui.add(params, 'brushSize').min(1).max(32).step(1);
+    gui.add(params, 'zoom').min(1).max(20);
   }
 
 
@@ -277,7 +273,7 @@ export function createDemo(divId, modelsSet) {
     lastDrawTime = time;
 
     twgl.bindFramebufferInfo(gl);
-    ca.draw();
+    ca.draw(params.zoom);
     requestAnimationFrame(render);
   }
 }
