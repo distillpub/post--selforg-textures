@@ -40,12 +40,13 @@
 <h4>To Neural Networks</h4>
 <p>The final step to solving or implementing the above general PDE for texture generation is to translate it to the &quot;language&quot; of deep learning. All the operations involved in iteratively evaluating the generalized PDE exist as commonly used operations in most deep learning frameworks. </p>
 <h3>NCAs as pattern generators</h3>
-<h4>Model: </h4>
+
 <p></p>
 <figure>
 <img src='images/texture_model.svg' style='width: 450px'>
 <figcaption>Texture NCA model.</figcaption>
 </figure>
+
 
 <p>We build on the Growing CA NCA model <d-cite key="growing-ca"></d-cite>, complete with built-in quantization of weights, and the batch pool mechanism to approximate long-term training. </p>
 <h4>Loss function: </h4>
