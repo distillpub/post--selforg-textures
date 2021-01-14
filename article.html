@@ -153,7 +153,7 @@
 <h4>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation. </p>
 <h4>Loss function: </h4>
-<p>We use VGG, as before. Our loss maximizes the activations of the chosen neurons in VGG, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of VGG frozen, and use ADAM [[Kingma_Ba_2014]] to update the weights of the NCA.</p>
+<p>We use VGG, as before. Our loss maximizes the activations of the chosen neurons in VGG, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of VGG frozen, and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
 <h4>Dataset: </h4>
 <p>There is no explicit dataset for this task. VGG is trained on ImageNet. The layers and neurons we chose to excite are sampled qualitatively from OpenAI Microscope.</p>
 <h4>Results:</h4>
