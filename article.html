@@ -33,7 +33,7 @@
 <p>Here, $f$ is simply a function that depends on the gradient and laplacian of the state space and determines the time evolution of this state space. In less mathematical terms - we&#39;ve defined a system where every point of the image changes with time, in a way that depends on how the image currently changes in space. </p>
 <h4>To CAs</h4>
 
-<p>Differential equations governing natural phenomena, without closed form solutions, are often thrown into numerical differential equation solvers. Indeed, this is sometimes the <strong>only</strong> way to solve them, as many PDEs and ODEs of interest don&#39;t have closed form solutions (often even deceptively simple ones, such as the <a href='https://en.wikipedia.org/wiki/Three-body_problem'>three-body problem</a>). Numerically solving PDEs and ODEs is a vast and well established field. The biggest and most important hammer in the metaphorical toolkit is establishing a regimen of discretizing the space of the ODE (or PDE). In the case of ODEs in time, taking steps of fixed or varying size makes sense. </p>
+<p>Differential equations governing natural phenomena are usually evaluated using numerical differential equation solvers. Indeed, this is sometimes the <strong>only</strong> way to solve them, as many PDEs and ODEs of interest don&#39;t have closed form solutions (often even deceptively simple ones, such as the <a href='https://en.wikipedia.org/wiki/Three-body_problem'>three-body problem</a>). Numerically solving PDEs and ODEs is a vast and well established field. The biggest and most important hammer in the metaphorical toolkit is establishing a regimen of discretizing the space of the ODE (or PDE). In the case of ODEs evaluating some phenomena in time, taking steps of fixed or varying size makes sense. </p>
 
 <p>In our case, the logical approach is to discretize the continuous 2D image space into a 2D raster grid. Boundary conditions are, of course, to worry about, but we can solve this by moving to a toroidal world - where each dimension simply wraps around on itself.</p>
 
@@ -45,6 +45,8 @@
 
 <h4>To Neural Networks</h4>
 <p>The final step to solving or implementing the above general PDE for texture generation is to translate it to the &quot;language&quot; of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks.  </p>
+
+<p><strong>Todo: talk a bit more about the NN implementation.</strong></p>
 <h3>NCAs as pattern generators</h3>
 
 <p></p>
@@ -63,13 +65,13 @@
 <figcaption>Texture NCA model.</figcaption>
 </figure>
 
-<p>Differentiable Parametrizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite> explains why VGG is the most commonly used network for implementing style-transfer. We use VGG for the same reason. We start with a template image, $\vec{x}$, we feed into VGG. We then collect statistics from certain layers (<i>block{1...6}_conv1, block4_conv2</i>) in the form of the raw activation values of the neurons in these layers. Finally, we feed the output, after between 32 and 64 iterations, of our Neural CA into VGG. Our loss is simply the $L_2$ distance between the activations of these neurons with the NCA input and their activations with the template image. We keep the weights of VGG frozen, and use ADAM <d-cite key="adam"></d-cite> to update the weights of the NCA.</p>
+<p>We use VGG as our differentiable discriminator of textures, for the same reasons outlined in Differentiable Parametrizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>. We start with a template image, $\vec{x}$, we feed into VGG. We then collect statistics from certain layers (<i>block{1...6}_conv1, block4_conv2</i>) in the form of the raw activation values of the neurons in these layers. Finally, we feed the output of our Neural CA into VGG, after iterating the NCA for between 32 and 64 iterations. Our loss is the $L_2$ distance between the gram matrix of activations of these neurons with the NCA as input and their activations with the template image as input. We keep the weights of VGG frozen, and use ADAM <d-cite key="adam"></d-cite> to update the weights of the NCA.</p>
 <h4>Dataset: </h4>
 <p>The template images for this dataset are from the Oxford Describable Textures Dataset <d-cite key="dtd"></d-cite>.  The aim of this dataset was to provide a training and testing set for algorithms to recognize textures and to describe textures using words. The textures were collected to match 47 &quot;attributes&quot; - such as &quot;bumpy&quot; or &quot;polka-dotted&quot;. These 47 attributes were in turn distilled from a set of common words used to describe textures identified by Bhusan, Rao and Lohse <d-cite key="bhusan"></d-cite>. </p>
 <h4>Results:</h4>
 <p>After a few iterations of training with the above picture as a template, we see the NCA converges to a solution. The very first thing to notice is that the resulting solution found in the NCA parameters is <strong>not</strong> time-invariant - in other words - it&#39;s constantly changing! </p>
 
-<p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into the images space would end up different every time the algorithm was run, due to the stochastic nature of the parametrizations. In our model, we find that we attain such alignment in the temporal dimension, without optimizing for it - a welcome surprise. We believe the reason is twofold. First, we apply our loss after a random number of iterations of the NCA - this means that at any given time step the pattern must be in a state that minimizes the loss. Secondly, the stochastic updates, local communication and quantization all limit and regularize the magnitude of updates at each iteration, meaning the absolute difference between one iteration and the next is often not drastic. We hypothesize that these two properties encourage the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration and thus the motion, or appearance of motion, we see in the trained NCA is the NCA traversing this manifold of locally aligned solutions. </p>
+<p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into the images space would end up different every time the algorithm was run, due to the stochastic nature of the parametrizations. To work around this, they introduce some tricks to keep <strong>alignment</strong> between several visualizations. In our model, we find that we attain such alignment in the temporal dimension without optimizing for it - a welcome surprise. We believe the reason is threefold. First, reaching and the maintaining a static state is non-trivial - in Growing CA this required a pooling mechanism to simulate very long-term loss. Second, we apply our loss after a random number of iterations of the NCA - this means that at any given time step the pattern must be in a state that minimizes the loss. Thirdly, the stochastic updates, local communication and quantization all limit and regularize the magnitude of updates at each iteration, meaning the absolute difference between one iteration and the next is often not drastic. We hypothesize that this encourages the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration and thus the motion, or appearance of motion, we see in the trained NCA is the NCA traversing this manifold of locally aligned solutions. </p>
 
 <p>We believe that finding temporally aligned solutions is equivalent to finding an algorithm, or process, that generates the template pattern. Below we demonstrate some exciting behaviours observed when training the NCA on different template images.  </p>
 
@@ -121,6 +123,8 @@
 <h4>Interactive Evolution of Camouflage</h4>
 <p>In Interactive Evolution of Camouflage <d-cite key="ieoc_reynolds"></d-cite>, Craig Reynolds uses a texture description language, consisting of generators and operators, to parametrize a texture patch, which is presented to human viewers who have to decide which patches are the worst at &quot;camouflaging&quot; themselves against a chosen background texture. The population is updated in an evolutionary fashion to maximize &quot;camouflage&quot;, resulting in a texture exhibiting the most camouflage (to human eyes) after a number of iterations. We see strong parallels to our work - instead of a texture generation language, we have an NCA parametrize the texture, and instead of human reviewers we use VGG as an evaluator of the quality of a generated pattern. We believe a fundamental difference lies in the solution space of an NCA. A texture generation language comes with a number of inductive biases and learns a deterministic mapping from coordinate to colour. Our method appears to learn more general algorithms and behaviours giving rise to the target pattern.</p>
 
+
+
 <h2 id='feature-visualization'>Feature Visualization</h2>
 
 <p></p>
@@ -171,21 +175,22 @@
 
 
 <h3>Robustness</h3>
+<h4>Switching manifold</h4>
+
 <p>We encode local information flowing the NCA using the fixed laplacian and gradient filters. As luck would have it, these can be defined for most underlying manifolds - giving us a way of placing our cells on various surfaces, in various configurations, without having to modify the learned model. Suppose we want our cells to live in a hexagonal world. We can redefine our kernels as follows:</p>
 
-<p>Our model, trained in a purely square environment, works out of the box! Play the corresponding setting in the demo to experiment with this. </p>
+<p>Our model, trained in a purely square environment, works out of the box on a hexagonal grid! Play the corresponding setting in the demo to experiment with this. </p>
 
 <p> </p>
-<h3>An Aside: Solitons and Lenia</h3>
-<p>The motion of waves propagating through a medium can be described using the "classical" wave equation. The below equation defines the change of some quantity $u$ (be it the surface height map of a body of water, the position of a vibrating string, etc.) with respect to the laplacian of $u$. $c$ ends up being the propagation speed of the wave.</p>
 
+<h4>Time-synchronization</h4>
+<p></p>
 <figure>
-<p>$\ddot u &#x3D; c^2 \nabla^2 u$2</p>
+<video src='videos/time_unsynced.mp4' autoplay loop muted style='width: 450px'></video>
+<figcaption>Two NCAs running next to each other, at different speeds. They can communicate through their shared edge.</figcaption>
 </figure>
 
-<p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies - a phenomenon referred to as a "group" or a "packet". Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe real-world waves, such as waves in water, light waves propagating, or sound, we have somewhat more complex partial differential equations governing their motion. These waves all share a common property - that waves of different frequencies will travel at different speeds. "Speed" in such a context is a tricky thing to define - however in this case we are referring to the speed of any single given wave - how fast its peak travels in space. In the above, classic, wave equation this corresponds to $c$. However, in the real world, when waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience "dispersion" - the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a "soliton" - as it describes a wave packet which exactly retains its shape during propagation.</p>
-
-<p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render in the pattern-generation experiment, as well as in  the inception experiment, consist of well defined structures such as circles or polygons. We consider such structures to be functionally equivalent to solitons and refer to them as such. Such a classification is inspired by solitons referred to in "Lenia" by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.</p>
+<p>Stochastic updates teach the cells to be somewhat robust to asynchronous updates. We investigate this property by taking it to an extreme - how do the cells react if two manifolds are allowed to communicate, but one runs the NCA at a different speed than the other? The result is surprisingly stable - the CA is still able to construct and maintain a consistent texture across the combined manifold. </p>
 <h2 id='hidden-states'>Hidden states</h2>
 <p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells or even emit different chemical signals to diffuse over the local substrate. </p>
 
@@ -208,6 +213,16 @@
 
 </d-article>
 <d-appendix>
+<h3>An Aside: Solitons and Lenia</h3>
+<p>The motion of waves propagating through a medium can be described using the "classical" wave equation. The below equation defines the change of some quantity $u$ (be it the surface height map of a body of water, the position of a vibrating string, etc.) with respect to the laplacian of $u$. $c$ ends up being the propagation speed of the wave.</p>
+
+<figure>
+<p>$\ddot u &#x3D; c^2 \nabla^2 u$2</p>
+</figure>
+
+<p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies - a phenomenon referred to as a "group" or a "packet". Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe real-world waves, such as waves in water, light waves propagating, or sound, we have somewhat more complex partial differential equations governing their motion. These waves all share a common property - that waves of different frequencies will travel at different speeds. "Speed" in such a context is a tricky thing to define - however in this case we are referring to the speed of any single given wave - how fast its peak travels in space. In the above, classic, wave equation this corresponds to $c$. However, in the real world, when waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience "dispersion" - the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a "soliton" - as it describes a wave packet which exactly retains its shape during propagation.</p>
+
+<p>Recall the idea briefly touched upon in Growing Neural Cellular Automata - that the communicating grid of CAs can be thought of as a finite difference approximation of a partial differential equation in both time and space, with the equation parametrized by a neural network. Several of the patterns we render in the pattern-generation experiment, as well as in  the inception experiment, consist of well defined structures such as circles or polygons. We consider such structures to be functionally equivalent to solitons and refer to them as such. Such a classification is inspired by solitons referred to in "Lenia" by B. Chan - solid, self-maintaining structures occurring as solutions to the continuous approximation to Game of Life.</p>
 
     <d-footnote-list></d-footnote-list>
     <d-citation-list></d-citation-list>
