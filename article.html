@@ -39,7 +39,7 @@
 
 <p>Our next task is to discretize the gradient and laplacian operators - for this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete laplace operator, as below. </p>
 
-$$\scalebox{.75}{\begin{array}{ c c c }
+$\scalebox{.75}{\begin{array}{ c c c }
 \begin{bmatrix}
 -1 & 0 & 1\\-2 & 0 & 2 \\-1 & 0 & 1 \\
 \end{bmatrix}
@@ -53,7 +53,7 @@ $$\scalebox{.75}{\begin{array}{ c c c }
 \end{bmatrix}
 \\
 Sobel_x & Sobel_y & Laplacian
-\end{array}}$$
+\end{array}}$
 
 <p>We now have a space-discretized version of our PDE that looks very much like a Cellular Automata - the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. Indeed, we can now formalise our PDE in the form of an CA. </p>
 
