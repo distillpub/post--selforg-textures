@@ -20,9 +20,11 @@ export function createDemo(divId, modelsSet) {
   let paused = false;
 
   const canvas = $('#demo-canvas');
+  canvas.width = W*6;
+  canvas.height = H*6;
   const gl = canvas.getContext("webgl");
-  canvas.width = W * 6;
-  canvas.height = H * 6;
+
+  const maxZoom = 32.0;
 
   const params = {
     modelSet: 'demo/models.json',
@@ -31,50 +33,39 @@ export function createDemo(divId, modelsSet) {
     modelname: "mixed",
     brushSize: 20,
     autoFill: true,
-    debug: true,
+    debug: false,
     zoom: 1.0,
   };
   let gui = null;
-
+  
   async function initLegend(models) {
-    console.log(models);
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
+    function setModel(name) {
+      console.log(name);
+      ca.clearCircle(0, 0, 1000);
+      params.model = brush2idx[name];
+      params.modelname = name;
+      ca.paint(0, 0, 10000, brush2idx[name], [0, 0]);
+      updateUI();   
+    }
+
     const w = Math.ceil(Math.sqrt(models.model_names.length));
     const h = Math.ceil(models.model_names.length/w);
     models.model_names.forEach((name, idx, _) => {
-
       const texture = document.createElement('div');
-
       let x = 100.0*(idx % w)/(w-1);
       let y = 100.0*Math.floor(idx / w)/(h-1);
-      console.log(x, y);
-      console.log(w, h);
       texture.style.background = "url('demo/sprites.png') " + x + "% " + y + "%";
       texture.style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
       texture.id = name; //html5 support arbitrary id:s
       texture.className = 'texture-square';
-      // texture.onmouseover = video.play.bind(video);
-      // texture.onmouseout = video.pause.bind(video);
-      // texture.addEventListener('touchstart', video.play.bind(video), false);
-      // texture.addEventListener('touchend', video.pause.bind(video), false);
-      texture.onclick = (() => {
-        console.log(name);
-        ca.clearCircle(0, 0, 1000);
-        params.model = brush2idx[name];
-        params.modelname = name;
-        ca.paint(0, 0, 10000, brush2idx[name], [0, 0]);
-        updateUI();
-      })
-      // const pause = video.pause.bind(video);
-      // texture.onmouseout = (()  => {pause(); video.currentTime = 0;});
-
-      // texture.appendChild(video)
+      texture.onclick = ()=>setModel(name);
       if (name.startsWith('mixed')){ 
         $("#inception").appendChild(texture);
       } else {
         $('#dtd').appendChild(texture);
       }
-      console.log(name);
+      setModel('interlaced_0172');
     });
 
 
@@ -120,9 +111,6 @@ export function createDemo(divId, modelsSet) {
 
 
   function updateUI() {
-    $$('#model-selector input').forEach(e => {
-      e.checked = e.id == experiment;
-    });
     $$('#model-hints span').forEach(e => {
       e.style.display = e.id.startsWith(experiment) ? "inline" : "none";
     });
@@ -152,6 +140,8 @@ export function createDemo(divId, modelsSet) {
       $("#texhinttext").innerHTML = '';
       $("#texhinttext").appendChild(dtd);
     }
+    $('#zoomOut').classList.toggle('disabled', params.zoom <= 1.0);
+    $('#zoomIn').classList.toggle('disabled', params.zoom >= maxZoom );
   }
 
   function initUI() {
@@ -160,33 +150,33 @@ export function createDemo(divId, modelsSet) {
       paused = !paused;
       updateUI();
     };
-
     $('#reset').onclick = () => {
       ca.clearCircle(0, 0, 1000);
       ca.paint(0, 0, 10000, params.model, [0, 0]);
     };
-
-    // $('#vfield').onclick = () => {
-    //   ca.alignment = (ca.alignment + 1) % 3; 
-    //   updateUI();
-    // };
-    // $$('#model-selector input').forEach(sel=>{
-    //   sel.onchange = ()=>{
-    //     experiment = sel.id;
-    //     updateModel();
-    //   }
-    // });
-    $$('#vectorfield input').forEach(sel=>{
-      sel.onchange = () => {
-        console.log(ca.alignment);
-        ca.alignment = sel.id;
-        updateUI();
-      }
+    $$('#alignSelect input').forEach((sel, i)=>{
+      sel.onchange = () => {ca.alignment = i;}
+    });
+    $$('#gridSelect input').forEach(sel=>{
+      sel.onchange = () => {ca.hexGrid = sel.id == 'gridHex';}
     });
     $('#speed').onchange = updateUI;
     $('#speed').oninput = updateUI;
     $('#rotation').onchange = updateUI;
     $('#rotation').oninput = updateUI;
+    $('#zoomIn').onclick = () => {
+      if (params.zoom < maxZoom) {
+        params.zoom *= 2.0;
+      }
+      updateUI();
+    };
+    $('#zoomOut').onclick = () => {
+      if (params.zoom > 1.0) {
+        params.zoom /= 2.0;
+      }
+      updateUI();
+    };
+
 
 
     canvas.onmousedown = e => {

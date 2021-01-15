@@ -332,12 +332,11 @@ const PROGRAMS = {
             gl_FragColor = texture2D(u_input_tex, xy);
             gl_FragColor.a = 1.0;
         } else {
-
             xy = (xy + vec2(0.5)*(u_zoom-1.0))/u_zoom;
             xy *= u_input.size;
             vec2 fp = 2.0*fract(xy)-1.0;
 
-            if (true) { //u_hexGrid > 0.0) {
+            if (u_hexGrid > 0.0) {
                 vec4 r = getHex(xy-u_input.size*0.5);
                 xy = r.zw+u_input.size*0.5;
                 fp = r.xy;
