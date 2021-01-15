@@ -60,7 +60,6 @@ Sobel_x & Sobel_y & Laplacian
 <h4>To Neural Networks</h4>
 <p>The final step to solving or implementing the above general PDE for texture generation is to translate it to the &quot;language&quot; of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks.  </p>
 
-<p><strong>Todo: talk a bit more about the NN implementation.</strong></p>
 <h3>NCAs as pattern generators</h3>
 
 <p></p>
@@ -196,7 +195,11 @@ Sobel_x & Sobel_y & Laplacian
 <p>Our model, trained in a purely square environment, works out of the box on a hexagonal grid! Play the corresponding setting in the demo to experiment with this. </p>
 
 <p> </p>
-
+<figure>
+<img src='images/coral_square.jpg' style='width: 200px'></img>
+<img src='images/coral_hex.jpg' style='width: 200px'></img>
+<figcaption>The same texture evaluated on a square and hexagonal grid, respectively.</figcaption>
+</figure>
 <h4>Time-synchronization</h4>
 <p></p>
 <figure>
