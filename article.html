@@ -39,7 +39,24 @@
 
 <p>Our next task is to discretize the gradient and laplacian operators - for this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete laplace operator, as below. </p>
 
-<p><strong>Todo: add latex definitions of these matrices.</strong></p>
+<p>$$</p>
+<p>\scalebox{.75}{\begin{array}{ c c c }</p>
+<p>\begin{bmatrix}</p>
+<p>-1 &amp; 0 &amp; 1\\-2 &amp; 0 &amp; 2 \\-1 &amp; 0 &amp; 1 \\</p>
+<p>\end{bmatrix}</p>
+<p>&amp;</p>
+<p>\begin{bmatrix}</p>
+<p>-1 &amp; -2 &amp; -1\\ 0 &amp; 0 &amp; 0 \\1 &amp; 2 &amp; 1 \\</p>
+<p>\end{bmatrix}</p>
+<p>&amp;</p>
+<p>\begin{bmatrix}</p>
+<p>1 &amp; 2 &amp; 1\\2 &amp; -12 &amp; 2 \\1 &amp; 2 &amp; 1 \\</p>
+<p>\end{bmatrix}</p>
+<p>\\</p>
+<p>Sobel_x &amp; Sobel_y &amp; Laplacian</p>
+<p>\end{array}}</p>
+<p>$$</p>
+
 
 <p>We now have a space-discretized version of our PDE that looks very much like a Cellular Automata - the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. Indeed, we can now formalise our PDE in the form of an CA. </p>
 
@@ -71,7 +88,7 @@
 <h4>Results:</h4>
 <p>After a few iterations of training with the above picture as a template, we see the NCA converges to a solution. The very first thing to notice is that the resulting solution found in the NCA parameters is <strong>not</strong> time-invariant - in other words - it&#39;s constantly changing! </p>
 
-<p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into the images space would end up different every time the algorithm was run, due to the stochastic nature of the parametrizations. To work around this, they introduce some tricks to keep <strong>alignment</strong> between several visualizations. In our model, we find that we attain such alignment in the temporal dimension without optimizing for it - a welcome surprise. We believe the reason is threefold. First, reaching and the maintaining a static state is non-trivial - in Growing CA this required a pooling mechanism to simulate very long-term loss. Second, we apply our loss after a random number of iterations of the NCA - this means that at any given time step the pattern must be in a state that minimizes the loss. Thirdly, the stochastic updates, local communication and quantization all limit and regularize the magnitude of updates at each iteration, meaning the absolute difference between one iteration and the next is often not drastic. We hypothesize that this encourages the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration and thus the motion, or appearance of motion, we see in the trained NCA is the NCA traversing this manifold of locally aligned solutions. </p>
+<p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into the images space would end up different every time the algorithm was run, due to the stochastic nature of the parametrizations. To work around this, they introduce some tricks to keep <strong>alignment</strong> between several visualizations. In our model, we find that we attain such alignment in the temporal dimension without optimizing for it - a welcome surprise. We believe the reason is threefold. First, reaching and maintaining a static state is non-trivial - in Growing CA this required a pooling mechanism to simulate very long-term loss. Second, we apply our loss after a random number of iterations of the NCA - this means that at any given time step the pattern must be in a state that minimizes the loss. Thirdly, the stochastic updates, local communication and quantization all limit and regularize the magnitude of updates at each iteration, meaning the absolute difference between one iteration and the next is often not drastic. We hypothesize that this encourages the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration and thus the motion, or appearance of motion, we see in the trained NCA is the NCA traversing this manifold of locally aligned solutions. </p>
 
 <p>We believe that finding temporally aligned solutions is equivalent to finding an algorithm, or process, that generates the template pattern. Below we demonstrate some exciting behaviours observed when training the NCA on different template images.  </p>
 
