@@ -9,7 +9,7 @@
 
 <p>To do this, we employ an old friend: differentiable parameterizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>.</p>
 
-<h2 id='patterns-textures'>Patterns, textures and physical processes</h2>
+<h2 id='patterns-textures-and-physical-processes'>Patterns, textures and physical processes</h2>
 <p></p>
 <figure>
 <img src='images/zebra.jpg' style='width: 450px'>
@@ -21,7 +21,7 @@
 <p>Patterns and textures are ill-defined concepts. The Cambridge English Dictionary defines a pattern as &quot;any regularly repeated arrangement, especially a design made from repeated lines, shapes, or colours on a surface&quot;. This definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A coloured fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of strands pointing in random directions with small random variations in size and color, and thus no discernable regularity to the pattern. Penrose&#39; tilings do not repeat (they are not translationally invariant), but show them to anyone and they&#39;ll describe them as a pattern or a texture. Most patterns in nature are outputs of locally interacting processes that may or may not be stochastic in nature, but are often based upon fairly simple rules. <d-cite key="Turing_1990"></d-cite> There has been extensive work studying models which can give rise to such patterns in nature, with most work based on Turing&#39;s seminal paper on morphogenesis.</p>
 
 <p>As a result, when having any model learn to produce textures or patterns we want the model to learn a generation process for the pattern or a method to sample from the distribution governing this pattern. The first hurdle is to choose an appropriate loss function, or qualitative measure of the pattern. To do so, we employ ideas from Gatys et. al <d-cite key="Gatys_Ecker_Bethge_2015"></d-cite>. NCA become the parametrization for an image we &quot;stylize&quot; in the style of the target pattern. In this case, instead of having an existing image be re-styled in a new way, our starting point is completely unconstrained - it&#39;s the raw output of a randomly initialized NCA. The NCAs serve as the "renderer" or &quot;generator&quot;, and a pre-trained differentiable model serves as a distinguisher of the patterns - providing the gradient necessary for the renderer to learn to produce a pattern of a certain style.</p>
-<h3>Turing, to Cellular Automata, to Neural Networks</h3>
+<h3 id='turing-to-cellular-automata-to-neural-networks'>Turing, to Cellular Automata, to Neural Networks</h3>
 <p>NCA are well suited to generating textures. To understand why, we&#39;ll demonstrate parallels between texture generation in nature and NCA, evidencing that NCA are a reasonable model for learning texture generation.</p>
 
 <p>PDEs</p>
@@ -34,7 +34,7 @@ $\frac{\partial \mathbf{s} }{\partial  t } = f(\textbf{s}, \nabla_\mathbf{x} \te
 </figure>
 
 <p>Here, $f$ is simply a function that depends on the gradient and laplacian of the state space and determines the time evolution of this state space. In less mathematical terms - we&#39;ve defined a system where every point of the image changes with time, in a way that depends on how the image currently changes in space. </p>
-<h4>To CAs</h4>
+<h4 id='to-cas'>To CAs</h4>
 
 <p>Differential equations governing natural phenomena are usually evaluated using numerical differential equation solvers. Indeed, this is sometimes the <strong>only</strong> way to solve them, as many PDEs and ODEs of interest don&#39;t have closed form solutions (often even deceptively simple ones, such as the <a href='https://en.wikipedia.org/wiki/Three-body_problem'>three-body problem</a>). Numerically solving PDEs and ODEs is a vast and well established field. The biggest and most important hammer in the metaphorical toolkit is establishing a regimen of discretizing the space of the ODE (or PDE). In the case of ODEs evaluating some phenomena in time, taking steps of fixed or varying size makes sense. </p>
 
@@ -62,10 +62,10 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>We now have a space-discretized version of our PDE that looks very much like a Cellular Automata - the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. Indeed, we can now formalise our PDE in the form of an CA. </p>
 
-<h4>To Neural Networks</h4>
+<h4 id='to-neural-networks'>To Neural Networks</h4>
 <p>The final step to solving or implementing the above general PDE for texture generation is to translate it to the &quot;language&quot; of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks.  </p>
 
-<h3>NCAs as pattern generators</h3>
+<h3 id='ncas-as-pattern-generators'>NCAs as pattern generators</h3>
 
 <p></p>
 <figure>
@@ -75,7 +75,7 @@ Sobel_x & Sobel_y & Laplacian
 
 
 <p>We build on the Growing CA NCA model <d-cite key="Mordvintsev_Randazzo_Niklasson_Levin_2020"></d-cite>, complete with built-in quantization of weights, and the batch pool mechanism to approximate long-term training. </p>
-<h4>Loss function: </h4>
+<h4 id='loss-function-'>Loss function: </h4>
 <p>	</p>
 
 <figure>
@@ -84,9 +84,9 @@ Sobel_x & Sobel_y & Laplacian
 </figure>
 
 <p>We use VGG as our differentiable discriminator of textures, for the same reasons outlined in Differentiable Parametrizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>. We start with a template image, $\vec{x}$, we feed into VGG. We then collect statistics from certain layers (block{1...6}_conv1, block4_conv2) in the form of the raw activation values of the neurons in these layers. Finally, we feed the output of our Neural CA into VGG, after iterating the NCA for between 32 and 64 iterations. Our loss is the $L_2$ distance between the gram matrix of activations of these neurons with the NCA as input and their activations with the template image as input. We keep the weights of VGG frozen, and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
-<h4>Dataset: </h4>
+<h4 id='dataset-'>Dataset: </h4>
 <p>The template images for this dataset are from the Oxford Describable Textures Dataset <d-cite key="Cimpoi_Maji_Kokkinos_Mohamed_Vedaldi_2013"></d-cite>.  The aim of this dataset was to provide a training and testing set for algorithms to recognize textures and to describe textures using words. The textures were collected to match 47 &quot;attributes&quot; - such as &quot;bumpy&quot; or &quot;polka-dotted&quot;. These 47 attributes were in turn distilled from a set of common words used to describe textures identified by Bhusan, Rao and Lohse <d-cite key="Bhushan_Rao_Lohse_1997"></d-cite>. </p>
-<h4>Results:</h4>
+<h4 id='results'>Results:</h4>
 <p>After a few iterations of training with the above picture as a template, we see the NCA converges to a solution. The very first thing to notice is that the resulting solution found in the NCA parameters is <strong>not</strong> time-invariant - in other words - it&#39;s constantly changing! </p>
 
 <p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into the images space would end up different every time the algorithm was run, due to the stochastic nature of the parametrizations. To work around this, they introduce some tricks to keep <strong>alignment</strong> between several visualizations. In our model, we find that we attain such alignment in the temporal dimension without optimizing for it - a welcome surprise. We believe the reason is threefold. First, reaching and maintaining a static state is non-trivial - in Growing CA this required a pooling mechanism to simulate very long-term loss. Second, we apply our loss after a random number of iterations of the NCA - this means that at any given time step the pattern must be in a state that minimizes the loss. Thirdly, the stochastic updates, local communication and quantization all limit and regularize the magnitude of updates at each iteration, meaning the absolute difference between one iteration and the next is often not drastic. We hypothesize that this encourages the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration and thus the motion, or appearance of motion, we see in the trained NCA is the NCA traversing this manifold of locally aligned solutions. </p>
@@ -136,9 +136,9 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 </figure>
 
 <p>This NCA also exhibits an algorithm for solving consistency in a striped pattern. The seams in ill-fitting stripes travel up, or down, the stripe, until either they merge to form a single straight stripe, or a stripe shrinks and disappears. Were this to be implemented algorithmically with local communication, it&#39;s not infeasible that a similar algorithm for finding consistency among the stripes would be used.</p>
-<h3>Related work </h3>
+<h3 id='related-work-'>Related work </h3>
 <p>Pattern generation is by no means a novel field. There has been extensive work predating deep-learning. As briefly touched upon, the inspiration for much of the work came from Turing&#39;s work on pattern generation through local interaction, and later papers based on this principle. However, we also wish to acknowledge some works that we feel have kinship with ours. </p>
-<h4>Interactive Evolution of Camouflage</h4>
+<h4 id='interactive-evolution-of-camouflage'>Interactive Evolution of Camouflage</h4>
 <p>In Interactive Evolution of Camouflage <d-cite key="Reynolds_2011"></d-cite>, Craig Reynolds uses a texture description language, consisting of generators and operators, to parametrize a texture patch, which is presented to human viewers who have to decide which patches are the worst at &quot;camouflaging&quot; themselves against a chosen background texture. The population is updated in an evolutionary fashion to maximize &quot;camouflage&quot;, resulting in a texture exhibiting the most camouflage (to human eyes) after a number of iterations. We see strong parallels to our work - instead of a texture generation language, we have an NCA parametrize the texture, and instead of human reviewers we use VGG as an evaluator of the quality of a generated pattern. We believe a fundamental difference lies in the solution space of an NCA. A texture generation language comes with a number of inductive biases and learns a deterministic mapping from coordinate to colour. Our method appears to learn more general algorithms and behaviours giving rise to the target pattern.</p>
 
 
@@ -167,17 +167,17 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 <figcaption>An NCA trained to excite <b>mixed4a_472</b> in VGG.</figcaption>
 </figure>
 
-<h3>Experiment: Feature Visualization</h3>
-<h4>Model: </h4>
+<h3 id='experiment-feature-visualization'>Experiment: Feature Visualization</h3>
+<h4 id='model-'>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation. </p>
-<h4>Loss function: </h4>
+<h4 id='loss-function-'>Loss function: </h4>
 <p>We use VGG, as before. Our loss maximizes the activations of the chosen neurons in VGG, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of VGG frozen, and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
-<h4>Dataset: </h4>
+<h4 id='dataset-'>Dataset: </h4>
 <p>There is no explicit dataset for this task. VGG is trained on ImageNet. The layers and neurons we chose to excite are sampled qualitatively from OpenAI Microscope.</p>
-<h4>Results:</h4>
+<h4 id='results'>Results:</h4>
 <p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions - i.e. most resulting NCAs don&#39;t stay still.</p>
 
-<h3>Interesting behaviours of inception solitons</h3>
+<h3 id='interesting-behaviours-of-inception-solitons'>Interesting behaviours of inception solitons</h3>
 <p></p>
 <figure>
 <video src='videos/eyes.mov' autoplay loop muted style='width: 450px'></video>
@@ -192,8 +192,8 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 <p>In textures that are composed of threads or lines, or in certain excitations of VGG neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
 
 
-<h3>Robustness</h3>
-<h4>Switching manifold</h4>
+<h3 id='robustness'>Robustness</h3>
+<h4 id='switching-manifold'>Switching manifold</h4>
 
 <p>We encode local information flowing the NCA using the fixed laplacian and gradient filters. As luck would have it, these can be defined for most underlying manifolds - giving us a way of placing our cells on various surfaces, in various configurations, without having to modify the learned model. Suppose we want our cells to live in a hexagonal world. We can redefine our kernels as follows:</p>
 
@@ -205,7 +205,7 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 <img src='images/coral_hex.png' style='width: 450px'></img>
 <figcaption>The same texture evaluated on a square and hexagonal grid, respectively.</figcaption>
 </figure>
-<h4>Time-synchronization</h4>
+<h4 id='timesynchronization'>Time-synchronization</h4>
 <p></p>
 <figure>
 <video src='videos/time_unsynced.mp4' autoplay loop muted style='width: 450px'></video>
@@ -235,7 +235,7 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 
 </d-article>
 <d-appendix>
-<h3>An Aside: Solitons and Lenia</h3>
+<h3 id='an-aside-solitons-and-lenia'>An Aside: Solitons and Lenia</h3>
 <p>The motion of waves propagating through a medium can be described using the "classical" wave equation. The below equation defines the change of some quantity $u$ (be it the surface height map of a body of water, the position of a vibrating string, etc.) with respect to the laplacian of $u$. $c$ ends up being the propagation speed of the wave.</p>
 
 <figure>
