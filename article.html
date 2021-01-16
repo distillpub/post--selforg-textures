@@ -87,9 +87,9 @@ Sobel_x & Sobel_y & Laplacian
 <h4 id='dataset-'>Dataset: </h4>
 <p>The template images for this dataset are from the Oxford Describable Textures Dataset <d-cite key="Cimpoi_Maji_Kokkinos_Mohamed_Vedaldi_2013"></d-cite>.  The aim of this dataset was to provide a training and testing set for algorithms to recognize textures and to describe textures using words. The textures were collected to match 47 &quot;attributes&quot; - such as &quot;bumpy&quot; or &quot;polka-dotted&quot;. These 47 attributes were in turn distilled from a set of common words used to describe textures identified by Bhusan, Rao and Lohse <d-cite key="Bhushan_Rao_Lohse_1997"></d-cite>. </p>
 <h4 id='results'>Results:</h4>
-<p>After a few iterations of training with the above picture as a template, we see the NCA converges to a solution. The very first thing to notice is that the resulting solution found in the NCA parameters is <strong>not</strong> time-invariant - in other words - it&#39;s constantly changing! </p>
+<p>After a few iterations of training, we see the NCA converges to a solution similar in nature to the input template image, but not pixel-wise identical. The very first thing to notice is that the resulting solution found in the NCA parameters is <strong>not</strong> time-invariant - in other words - it&#39;s constantly changing! </p>
 
-<p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into the images space would end up different every time the algorithm was run, due to the stochastic nature of the parametrizations. To work around this, they introduce some tricks to keep <strong>alignment</strong> between several visualizations. In our model, we find that we attain such alignment in the temporal dimension without optimizing for it - a welcome surprise. We believe the reason is threefold. First, reaching and maintaining a static state is non-trivial - in Growing CA this required a pooling mechanism to simulate very long-term loss. Second, we apply our loss after a random number of iterations of the NCA - this means that at any given time step the pattern must be in a state that minimizes the loss. Thirdly, the stochastic updates, local communication and quantization all limit and regularize the magnitude of updates at each iteration, meaning the absolute difference between one iteration and the next is often not drastic. We hypothesize that this encourages the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration and thus the motion, or appearance of motion, we see in the trained NCA is the NCA traversing this manifold of locally aligned solutions. </p>
+<p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into the images space would end up different every time the algorithm was run, due to the stochastic nature of the parametrizations. To work around this, they introduce some tricks to keep <strong>alignment</strong> between several visualizations. In our model, we find that we attain such alignment in the temporal dimension without optimizing for it - a welcome surprise. We believe the reason is threefold. First, reaching and maintaining a static state is non-trivial, so we use the solution from Growing CA of maintaining a pool of NCA states at various iteration times and sampling these as starting states, to simulate loss being applied after a time period longer than the NCAs iteration period. Second, we apply our loss after a random number of iterations of the NCA - this means that at any given time step the pattern must be in a state that minimizes the loss. Thirdly, the stochastic updates, local communication and quantization all limit and regularize the magnitude of updates at each iteration, meaning the absolute difference between one iteration and the next is often not drastic. We hypothesize that this encourages the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration and thus the motion, or appearance of motion, we see in the trained NCA is the NCA traversing this manifold of locally aligned solutions. </p>
 
 <p>We believe that finding temporally aligned solutions is equivalent to finding an algorithm, or process, that generates the template pattern. Below we demonstrate some exciting behaviours observed when training the NCA on different template images.  </p>
 
@@ -110,7 +110,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p></p>
 <figure>
-g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></video>
+<video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></video>
 <figcaption>An NCA trained to create a pattern in the style of <b>bubbly0101.jpg</b>.</figcaption>
 </figure>
 
@@ -136,10 +136,12 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 </figure>
 
 <p>This NCA also exhibits an algorithm for solving consistency in a striped pattern. The seams in ill-fitting stripes travel up, or down, the stripe, until either they merge to form a single straight stripe, or a stripe shrinks and disappears. Were this to be implemented algorithmically with local communication, it&#39;s not infeasible that a similar algorithm for finding consistency among the stripes would be used.</p>
-<h3 id='related-work-'>Related work </h3>
+<h3 id='related-work'>Related work</h3>
 <p>Pattern generation is by no means a novel field. There has been extensive work predating deep-learning. As briefly touched upon, the inspiration for much of the work came from Turing&#39;s work on pattern generation through local interaction, and later papers based on this principle. However, we also wish to acknowledge some works that we feel have kinship with ours. </p>
 <h4 id='interactive-evolution-of-camouflage'>Interactive Evolution of Camouflage</h4>
 <p>In Interactive Evolution of Camouflage <d-cite key="Reynolds_2011"></d-cite>, Craig Reynolds uses a texture description language, consisting of generators and operators, to parametrize a texture patch, which is presented to human viewers who have to decide which patches are the worst at &quot;camouflaging&quot; themselves against a chosen background texture. The population is updated in an evolutionary fashion to maximize &quot;camouflage&quot;, resulting in a texture exhibiting the most camouflage (to human eyes) after a number of iterations. We see strong parallels to our work - instead of a texture generation language, we have an NCA parametrize the texture, and instead of human reviewers we use VGG as an evaluator of the quality of a generated pattern. We believe a fundamental difference lies in the solution space of an NCA. A texture generation language comes with a number of inductive biases and learns a deterministic mapping from coordinate to colour. Our method appears to learn more general algorithms and behaviours giving rise to the target pattern.</p>
+
+
 
 
 
@@ -177,6 +179,7 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 <h4 id='results'>Results:</h4>
 <p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions - i.e. most resulting NCAs don&#39;t stay still.</p>
 
+<h2 id='discussion'>Discussion</h2>
 <h3 id='interesting-behaviours-of-inception-solitons'>Interesting behaviours of inception solitons</h3>
 <p></p>
 <figure>
@@ -213,7 +216,7 @@ g <video src='videos/bubbles.mov' autoplay loop muted style='width: 450px'></vid
 </figure>
 
 <p>Stochastic updates teach the cells to be somewhat robust to asynchronous updates. We investigate this property by taking it to an extreme - how do the cells react if two manifolds are allowed to communicate, but one runs the NCA at a different speed than the other? The result is surprisingly stable - the CA is still able to construct and maintain a consistent texture across the combined manifold. </p>
-<h2 id='hidden-states'>Hidden states</h2>
+<h3 id='hidden-states'>Hidden states</h3>
 <p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells or even emit different chemical signals to diffuse over the local substrate. </p>
 
 <p>There are various ways to visualize communication channels in real cells. One of them is to add to cells a potential-activated dye - allowing a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique has provided useful insight into the communication patterns within groups of cells - showing both local and nonlocal communication over a variety of time-scales.</p>
