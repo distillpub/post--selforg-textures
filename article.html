@@ -70,8 +70,8 @@ Sobel_x & Sobel_y & Laplacian
 <h3 id='ncas-as-pattern-generators'>NCAs as pattern generators</h3>
 
 <p></p>
-<figure>
-<img src='images/texture_model.svg' style='width: 650px'>
+<figure style='margin-left: auto; margin-right: auto; grid-column: page; width: 100%; max-width: 2000px' >
+<img src='images/texture_model.svg' style='width: 100%'>
 <figcaption>Texture NCA model.</figcaption>
 </figure>
 
@@ -80,12 +80,12 @@ Sobel_x & Sobel_y & Laplacian
 <h4 id='loss-function-'>Loss function: </h4>
 <p>	</p>
 
-<figure>
-<img src='images/texture_training.svg' style='width: 650px'>
+<figure style='margin-left: auto; margin-right: auto; grid-column: page; width: 100%; max-width: 2000px' >
+<img src='images/texture_training.svg' style='width: 100%'>
 <figcaption>Texture NCA model.</figcaption>
 </figure>
 
-<p>We use VGG as our differentiable discriminator of textures, for the same reasons outlined in Differentiable Parametrizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>. We start with a template image, $\vec{x}$, we feed into VGG. We then collect statistics from certain layers (block{1...6}_conv1, block4_conv2) in the form of the raw activation values of the neurons in these layers. Finally, we feed the output of our Neural CA into VGG, after iterating the NCA for between 32 and 64 iterations. Our loss is the $L_2$ distance between the gram matrix of activations of these neurons with the NCA as input and their activations with the template image as input. We keep the weights of VGG frozen, and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
+<p>We use VGG as our differentiable discriminator of textures, for the same reasons outlined in Differentiable Parametrizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>. We start with a template image, $\vec{x}$, we feed into VGG. We then collect statistics from certain layers (block{$1...6$}_conv1, block4_conv2) in the form of the raw activation values of the neurons in these layers. Finally, we feed the output of our Neural CA into VGG, after iterating the NCA for between 32 and 64 iterations. Our loss is the $L_2$ distance between the gram matrix of activations of these neurons with the NCA as input and their activations with the template image as input. We keep the weights of VGG frozen, and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
 <h4 id='dataset-'>Dataset: </h4>
 <p>The template images for this dataset are from the Oxford Describable Textures Dataset <d-cite key="Cimpoi_Maji_Kokkinos_Mohamed_Vedaldi_2013"></d-cite>.  The aim of this dataset was to provide a training and testing set for algorithms to recognize textures and to describe textures using words. The textures were collected to match 47 &quot;attributes&quot; - such as &quot;bumpy&quot; or &quot;polka-dotted&quot;. These 47 attributes were in turn distilled from a set of common words used to describe textures identified by Bhusan, Rao and Lohse <d-cite key="Bhushan_Rao_Lohse_1997"></d-cite>. </p>
 <h4 id='results'>Results:</h4>
@@ -112,7 +112,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p></p>
 <figure>
-<video src='videos/bubbles.mp4' autoplay loop muted style='width: 450px'></video>
+<video src='videos/bubbles.mp4' autoplay loop muted controls style='width: 450px'></video>
 <figcaption>An NCA trained to create a pattern in the style of <b>bubbly0101.jpg</b>.</figcaption>
 </figure>
 
@@ -124,7 +124,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p></p>
 <figure>
-<video src='videos/viking.mp4'' autoplay loop muted style='width: 450px'></video>
+<video src='videos/viking.mp4'' autoplay loop muted controls style='width: 450px'></video>
 <figcaption>An NCA trained to create a pattern in the style of <b>interlaced_0172.jpg</b>.</figcaption>
 </figure>
 
@@ -133,19 +133,23 @@ Sobel_x & Sobel_y & Laplacian
 
 
 <figure>
-<video src='videos/lines.mp4' autoplay loop muted style='width: 450px'></video>
+<video src='videos/lines.mp4' autoplay loop muted controls style='width: 450px'></video>
 <figcaption>An NCA trained to create a pattern in the style of <b>banded_0037.jpg</b>.</figcaption>
 </figure>
 
 <p>This NCA also exhibits an algorithm for solving consistency in a striped pattern. The seams in ill-fitting stripes travel up, or down, the stripe, until either they merge to form a single straight stripe, or a stripe shrinks and disappears. Were this to be implemented algorithmically with local communication, it&#39;s not infeasible that a similar algorithm for finding consistency among the stripes would be used.</p>
 <h3 id='related-work'>Related work</h3>
 <p>Pattern generation is by no means a novel field. There has been extensive work predating deep-learning, in particular suggesting deep links between spatial patterning of anatomical structure and temporal patterning of cognitive and computational processes (e.g., reviewed in @). Hans Spemann, one of the classical heroes of developmental biology, said "Again and again terms have been used which point not to physical but to psychical analogies. It was meant to be more than a poetical metaphor. It was meant to my conviction that the suitable reaction of a germ fragment, endowed with diverse potencies, in an embryonic &#39;field&#39;... is not a common chemical reaction, like all vital processes, are comparable, to nothing we know in such degree as to vital processes of which we have the most intimate knowledge." @.  More recently, Grossberg quantitatively laid out important similarities between developmental patterning and computational neuroscience @. As briefly touched upon, the inspiration for much of the work came from Turing&#39;s work on pattern generation through local interaction, and later papers based on this principle. However, we also wish to acknowledge some works that we feel have kinship with ours. </p>
+<h4 id='patch-sampling'>Patch sampling</h4>
+<p>Early work in pattern generation focused on texture sampling. Patches were often sampled from the original image and reconstructed or rejoined in different ways to obtain an approximation of the texture. This method has also seen recent success with the work of Gumin <d-cite key="Gumin"></d-cite>.</p>
+<h4 id='deep-learning'>Deep learning</h4>
+<p>Gatys et. al&#39;s work <d-cite key="Gatys_Ecker_Bethge_2015"></d-cite>, referenced throughout, has been seminal with regards to the idea that statistics of certain layers in a pre-trained network can capture textures or styles in an image. There has been extensive work building on this idea, including playing with other parametrisations for the image generation <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite> and optimizing the generation process <d-cite key="Ulyanov_Lebedev_Vedaldi_Lempitsky_2016"></d-cite>. </p>
+
+<p>Other work has focused on using a convolutional generator combined with path sampling and trained using an adversarial loss to produce a texture of similar quality <d-cite key="Xian_Sangkloy_Agrawal_Raj_Lu_Fang_Yu_Hays_2018"></d-cite>. </p>
 <h4 id='interactive-evolution-of-camouflage'>Interactive Evolution of Camouflage</h4>
-<p>In Interactive Evolution of Camouflage <d-cite key="Reynolds_2011"></d-cite>, Craig Reynolds uses a texture description language, consisting of generators and operators, to parametrize a texture patch, which is presented to human viewers who have to decide which patches are the worst at &quot;camouflaging&quot; themselves against a chosen background texture. The population is updated in an evolutionary fashion to maximize &quot;camouflage&quot;, resulting in a texture exhibiting the most camouflage (to human eyes) after a number of iterations. We see strong parallels to our work - instead of a texture generation language, we have an NCA parametrize the texture, and instead of human reviewers we use VGG as an evaluator of the quality of a generated pattern. We believe a fundamental difference lies in the solution space of an NCA. A texture generation language comes with a number of inductive biases and learns a deterministic mapping from coordinate to colour. Our method appears to learn more general algorithms and behaviours giving rise to the target pattern.</p>
+<p>Perhaps the most unconventional approach, with which we find nonetheless find kinship, is in Interactive Evolution of Camouflage <d-cite key="Reynolds_2011"></d-cite>, Craig Reynolds uses a texture description language, consisting of generators and operators, to parametrize a texture patch, which is presented to human viewers who have to decide which patches are the worst at &quot;camouflaging&quot; themselves against a chosen background texture. The population is updated in an evolutionary fashion to maximize &quot;camouflage&quot;, resulting in a texture exhibiting the most camouflage (to human eyes) after a number of iterations. We see strong parallels to our work - instead of a texture generation language, we have an NCA parametrize the texture, and instead of human reviewers we use VGG as an evaluator of the quality of a generated pattern. We believe a fundamental difference lies in the solution space of an NCA. A texture generation language comes with a number of inductive biases and learns a deterministic mapping from coordinate to colour. Our method appears to learn more general algorithms and behaviours giving rise to the target pattern.</p>
 
-
-
-
+<p>Two other noteworthy examples of similar work are Portilla et. al&#39;s work with the wavelet transform <d-cite key="Portilla_Simoncelli_2000"></d-cite>, and work by Chen et al with reaction diffusion <d-cite key="Chen_Pock_2017"></d-cite>.</p>
 
 <h2 id='feature-visualization'>Feature Visualization</h2>
 
@@ -168,7 +172,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p></p>
 <figure>
-<video src='videos/eyes.mp4' autoplay loop muted style='width: 450px'></video>
+<video src='videos/eyes.mp4' autoplay loop muted controls style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4a_472</b> in VGG.</figcaption>
 </figure>
 
@@ -186,13 +190,13 @@ Sobel_x & Sobel_y & Laplacian
 <h3 id='interesting-behaviours-of-inception-solitons'>Interesting behaviours of inception solitons</h3>
 <p></p>
 <figure>
-<video src='videos/eyes.mov' autoplay loop muted style='width: 450px'></video>
+<video src='videos/eyes.mov' autoplay loop muted controls style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4c_439</b> in VGG.</figcaption>
 </figure>
 <p>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may cause one of both of them to decay. We also observe that solitons can "divide" into two complete new solitons.</p>
 <p></p>
 <figure>
-<video src='videos/moving_thread.mov' autoplay loop muted style='width: 450px'></video>
+<video src='videos/moving_thread.mov' autoplay loop muted controls style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4b_454</b> in VGG.</figcaption>
 </figure>
 <p>In textures that are composed of threads or lines, or in certain excitations of VGG neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
@@ -214,7 +218,7 @@ Sobel_x & Sobel_y & Laplacian
 <h4 id='timesynchronization'>Time-synchronization</h4>
 <p></p>
 <figure>
-<video src='videos/time_unsynced.mp4' autoplay loop muted style='width: 450px'></video>
+<video src='videos/time_unsynced.mp4' autoplay loop controls muted style='width: 450px'></video>
 <figcaption>Two NCAs running next to each other, at different speeds. They can communicate through their shared edge.</figcaption>
 </figure>
 
@@ -228,7 +232,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>	</p>
 <figure>
-<video src='videos/threads_hidden.mov' autoplay loop muted style='width: 450px'></video>
+<video src='videos/threads_hidden.mov' autoplay loop muted controls style='width: 450px'></video>
 <figcaption>An NCA trained to excite <b>mixed4b_70</b> in VGG.</figcaption>
 </figure>
 
