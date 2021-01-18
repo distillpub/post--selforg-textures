@@ -55,7 +55,7 @@ export function createDemo(divId, modelsSet) {
       const texture = document.createElement('div');
       let x = 100.0*(idx % w)/(w-1);
       let y = 100.0*Math.floor(idx / w)/(h-1);
-      texture.style.background = "url('demo/sprites.png') " + x + "% " + y + "%";
+      texture.style.background = "url('demo/sprites.jpeg') " + x + "% " + y + "%";
       texture.style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
       texture.id = name; //html5 support arbitrary id:s
       texture.className = 'texture-square';
@@ -125,7 +125,7 @@ export function createDemo(divId, modelsSet) {
     const h = Math.ceil(params.models.model_names.length/w);
     let x = 100.0*(params.model % w)/(w-1);
     let y = 100.0*Math.floor(params.model / w)/(h-1);
-    $("#origtex").style.background = "url('demo/dtd_sprites.png') " + x + "% " + y + "%";
+    $("#origtex").style.background = "url('demo/dtd_sprites.jpeg') " + x + "% " + y + "%";
     $("#origtex").style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
     if (params.modelname.startsWith('mixed')){
       let oai = document.createElement('a')
