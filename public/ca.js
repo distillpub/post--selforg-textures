@@ -132,6 +132,21 @@ const PREFIX = `
         dir = rotate(u_angle) * dir;
         return dir;
     }
+    // https://www.shadertoy.com/view/Xljczw
+    // https://www.shadertoy.com/view/MlXyDl
+    // returns xy - in cell pos, zw - skewed cell id
+    vec4 getHex(vec2 u) {
+        vec2 s = vec2(1., mix(2.0, 1.732, u_hexGrid));
+        vec2 p = vec2(0.5*u_hexGrid, 0.5);
+        vec2 a = mod(u    ,s)*2.-s;
+        vec2 b = mod(u+s*p,s)*2.-s;
+        vec2 ai = floor(u/s);
+        vec2 bi = floor(u/s+p);
+        // skewed coords
+        ai = vec2(ai.x-ai.y*u_hexGrid, ai.y*2.0+1.0);
+        bi = vec2(bi.x-bi.y*u_hexGrid, bi.y*2.0);
+        return dot(a,a)<dot(b,b) ? vec4(a, ai) : vec4(b, bi);    
+    }
 `;
 
 const PROGRAMS = {
@@ -141,11 +156,19 @@ const PROGRAMS = {
     uniform vec4 u_brush;
 
     void main() {
-        vec2 diff = abs(getOutputXY()-u_pos+0.5);
+
+        vec2 xy = u_pos;
+        if (u_hexGrid > 0.0) {
+            vec4 r = getHex(u_pos - u_output.size*0.5);
+            xy = r.zw + u_output.size*0.5;
+        }
+        vec2 xy_out = getOutputXY();
+        vec2 diff = abs(xy_out-xy);
         diff = min(diff, u_output.size-diff);
         if (length(diff)>=u_r) 
           discard;
         setOutput(u_brush);
+
     }`,
     perception: `
     const mat3 sobelX = mat3(-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0)/8.0;
@@ -307,22 +330,6 @@ const PROGRAMS = {
         vec2 d = min( vec2( dot(a,a), s*(p.x*q.y-p.y*q.x) ),
                       vec2( dot(b,b), s*(p.y-q.y)  ));
         return -sqrt(d.x)*sign(d.y);
-    }
-
-    // https://www.shadertoy.com/view/Xljczw
-    // https://www.shadertoy.com/view/MlXyDl
-    // returns xy - in cell pos, zw - skewed cell id
-    vec4 getHex(vec2 u) {
-        vec2 s = vec2(1., mix(2.0, 1.732, u_hexGrid));
-        vec2 p = vec2(0.5*u_hexGrid, 0.5);
-        vec2 a = mod(u    ,s)*2.-s;
-        vec2 b = mod(u+s*p,s)*2.-s;
-        vec2 ai = floor(u/s);
-        vec2 bi = floor(u/s+p);
-        // skewed coords
-        ai = vec2(ai.x-ai.y*u_hexGrid, ai.y*2.0+1.0);
-        bi = vec2(bi.x-bi.y*u_hexGrid, bi.y*2.0);
-        return dot(a,a)<dot(b,b) ? vec4(a, ai) : vec4(b, bi);    
     }
     
 
@@ -605,8 +612,9 @@ export class CA {
     }
 
     clearCircle(x, y, r, brush) {
+        console.log(x, y)
         self.runLayer(self.progs.paint, this.buf.state, {
-            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0],
+            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0], u_hexGrid: this.hexGrid
         });
     }
 
