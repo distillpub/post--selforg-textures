@@ -12,7 +12,7 @@
     font-size: 14px;
     user-select: none;
     grid-template-columns: auto;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto auto;
     grid-auto-flow: column;
     row-gap: 10px;
 }
@@ -24,7 +24,7 @@
 @media (min-width: 1000px) {
   #demo {
     grid-template-columns: 1fr 300px;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto;
   }
   #pattern-controls {
     grid-row: 1;
@@ -32,7 +32,6 @@
 }
 
 #demo-canvas {
-    margin: auto;
     border: 1px solid lightgrey;
     image-rendering: pixelated;
     touch-action: none;
@@ -321,50 +320,60 @@ input[type="radio"] {
 
 <div class="l-body-outset grid" id="demo">
 
-  <canvas id="demo-canvas"></canvas>
+  <div>
+    <canvas id="demo-canvas"></canvas>
 
-  <div class="demo-controls">
-    <div class="play-reset" style="text-align: left;">
-      <span id="play-pause">
-        <svg class="icon" id="play"><use xlink:href="#playIcon"></use></svg>
-        <svg class="icon" id="pause" style="display: none;"><use xlink:href="#pauseIcon"></use></svg>
-      </span>
-      <svg class="icon" id="reset"><use xlink:href="#resetIcon"></use></svg>
-    </div>
-    <div class="speed">
-      <input type="range" id="speed" min="-3" max="3" step="1" value="0"></br>Speed: <label id="speedLabel"></label>
-    </div>
-    <div  style="text-align: right;">
-      <svg class="icon" id="zoomIn"><use xlink:href="#zoomInIcon"></use></svg>
-      <svg class="icon disabled" id="zoomOut"><use xlink:href="#zoomOutIcon"></use></svg>
-    </div>
-    <div id='alignSelect' class="button-group">
-      <label>
-        <input type="radio" checked="checked" name="align"><img src="images/icons.svg#alignRegular"/>
-      </label>
-      <label>
-        <input type="radio" name="align"><img src="images/icons.svg#alignPolar"/>
-      </label>
-      <label>
-        <input type="radio" name="align"><img src="images/icons.svg#alignDipole"/>
-      </label>
-      <br>Cell alignment
-    </div>
-    <div>
-      <input type="range" id="rotation" min="0" max="360" step="1" value="0"></br>Rotation: <label
-      id="rotationLabel"></label><br>
-    </div>
-    <div id='gridSelect' class="button-group">
-      <label>
-        <input type="radio" checked="checked" name="grid"><img src="images/icons.svg#gridSquare"/>
-      </label>
-      <label>
-        <input type="radio" name="grid" id='gridHex'><img src="images/icons.svg#gridHex"/>
-      </label>
-      <br>Grid type
+    <div class="demo-controls">
+      <div class="play-reset" style="text-align: left;">
+        <span id="play-pause">
+          <svg class="icon" id="play"><use xlink:href="#playIcon"></use></svg>
+          <svg class="icon" id="pause" style="display: none;"><use xlink:href="#pauseIcon"></use></svg>
+        </span>
+        <svg class="icon" id="reset"><use xlink:href="#resetIcon"></use></svg>
+      </div>
+      <div class="speed">
+        <input type="range" id="speed" min="-3" max="3" step="1" value="0"></br>Speed: <label id="speedLabel"></label>
+      </div>
+      <div  style="text-align: right;">
+        <svg class="icon" id="zoomIn"><use xlink:href="#zoomInIcon"></use></svg>
+        <svg class="icon disabled" id="zoomOut"><use xlink:href="#zoomOutIcon"></use></svg>
+      </div>
+      <div id='alignSelect' class="button-group">
+        <label>
+          <input type="radio" checked="checked" name="align"><img src="images/icons.svg#alignRegular"/>
+        </label>
+        <label>
+          <input type="radio" name="align"><img src="images/icons.svg#alignPolar"/>
+        </label>
+        <label>
+          <input type="radio" name="align"><img src="images/icons.svg#alignDipole"/>
+        </label>
+        <br>Cell alignment
+      </div>
+      <div>
+        <input type="range" id="rotation" min="0" max="360" step="1" value="0"></br>Rotation: <label
+        id="rotationLabel"></label><br>
+      </div>
+      <div id='gridSelect' class="button-group">
+        <label>
+          <input type="radio" checked="checked" name="grid"><img src="images/icons.svg#gridSquare"/>
+        </label>
+        <label>
+          <input type="radio" name="grid" id='gridHex'><img src="images/icons.svg#gridHex"/>
+        </label>
+        <br>Gird type
+      </div>
     </div>
   </div>
-  
+
+
+    <!-- <div id="status">
+      
+          Step <span id="stepCount"></span>
+          (<span id="ips"></span> step/s)
+    </div> -->
+
+
   <div id="pattern-controls">
     <div class="pattern-selector-title">
       <span>Describable Textures Dataset</span>
@@ -381,12 +390,12 @@ input[type="radio"] {
       </div>
       <span id="texhinttext"></span>
     </div>
-  </div>
 
+    <div id="colab-hero-div">
+      <a href="https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/growing_ca.ipynb"
+        class="colab-root" id="colab-hero">Try in a <span class="colab-span">Notebook</span></a>
+    </div>
 
-  <div id="colab-hero-div">
-    <a href="https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/growing_ca.ipynb"
-      class="colab-root" id="colab-hero">Try in a <span class="colab-span">Notebook</span></a>
   </div>
 
 </div>
