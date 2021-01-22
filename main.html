@@ -308,6 +308,13 @@
       grid-column: middle;
     }
 
+    /* so the headings in the appendix are on one line in narrow screens */
+    @media(max-width: 1000px) {
+      d-appendix h3 {
+        grid-column: text !important; 
+      } 
+    }
+
   </style>
   <script>
   // hack to edit font size in code snippets. guaranteed a better way to do 
