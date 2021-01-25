@@ -243,6 +243,16 @@ Sobel_x & Sobel_y & Laplacian
 </figure>
 
 <p>The right frame shows a visualisation of PCA-transformed hidden states of the cells. Specifically - we find the top three components and visualize  The other three quadrants are visualizations of the hidden states. We can use this visualization technique to attempt some rudimentary qualitative analysis of what the NCA may be using the hidden channels for. For instance, in the bottom-left quadrant, we see a pattern very similarly to the visible channels. However, the &quot;threads&quot; pointing in each diagonal direction have different colours - one diagonal is an off-pink and the other is a yellow-ish colour. This suggests that one of the things encoded into the hidden states is the direction of a &quot;thread&quot;, likely to allow cells that are inside one of these threads to keep track of which direction the thread is growing, or moving, in. </p>
+<p></p>
+<figure>
+<video src='videos/chequered_hidden.mp4' autoplay loop muted controls style='width: 650px'></video>
+<figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br> An NCA trained to produce a texture based on DTD image <b>cheqeuered_0121</b>. Notice the structure of squares - with a gradient occurring inside the structure of each square, evidencing that structure is being encoded in hidden state.</figcaption>
+</figure>
+<p></p>
+<figure>
+<video src='videos/eyes_hidden.mp4' autoplay loop muted controls style='width: 650px'></video>
+<figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br>  An NCA trained to excite <b>mixed4c_208</b> in VGG. The visible body of the eye is clearly demarcated in the hidden states. There is also a "halo" which appears to modulate growth of any solitons immediately next to each other. This halo is barely visible in the RGB channels..</figcaption>
+</figure> 
 
 <p>Analysis of these hidden states is somewhat of a dark art and it is not always possible to draw rigorous conclusions about their role or behaviour. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs.</p>
 <h2 id='conclusion'>Conclusion</h2>
