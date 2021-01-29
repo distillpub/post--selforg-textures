@@ -20,8 +20,8 @@ export function createDemo(divId, modelsSet) {
   let paused = false;
 
   const canvas = $('#demo-canvas');
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = W*6; //so we can render hexells
+  canvas.height = H*6;
   const gl = canvas.getContext("webgl");
 
   const maxZoom = 32.0;
@@ -38,11 +38,11 @@ export function createDemo(divId, modelsSet) {
   };
   let gui = null;
   let currentTexture = null;
+  const initTexture = "interlaced_0172";
   
   async function initLegend(models) {
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
     function setModel(name) {
-      console.log(name);
       ca.clearCircle(0, 0, 1000);
       params.model = brush2idx[name];
       params.modelname = name;
@@ -61,6 +61,7 @@ export function createDemo(divId, modelsSet) {
       texture.id = name; //html5 support arbitrary id:s
       texture.className = 'texture-square';
       texture.onclick = () => {
+        removeOverlayIcon();
         currentTexture.style.borderColor = "white";
         currentTexture = texture;
         texture.style.borderColor = "rgb(245 140 44)";
@@ -69,27 +70,33 @@ export function createDemo(divId, modelsSet) {
         }
         setModel(name);
       };
+      let gridBox = null;
       if (name.startsWith('mixed')){ 
-        $("#inception").appendChild(texture);
+        gridBox = $("#inception");
       } else {
-        $('#dtd').appendChild(texture);
+        gridBox = $('#dtd');
       }
-      currentTexture = texture;
+      if (name == initTexture){
+        currentTexture = texture;
+        texture.style.borderColor = "rgb(245 140 44)";
+        gridBox.prepend(texture);
+      } else {
+        gridBox.appendChild(texture);
+      }
     });
     setModel('interlaced_0172');
     $$(".pattern-selector").forEach(sel => {
-      sel.onscroll = () => {
-        console.log(sel)
-        $$(".overlaygrad").forEach(sel2 => {
-          if (window.matchMedia('(min-width: 500px)').matches){
-            sel2.style.backgroundImage = "linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0) 10%, rgba(255,255,255,0) 90%, rgb(255,255,255) 100%)";
-          } else {
-            sel2.style.backgroundImage = "linear-gradient(to right, rgb(255,255,255) 0%, rgba(255,255,255,0) 10%, rgba(255,255,255,0) 90%, rgb(255,255,255) 100%)";
-          }
-          })
+      sel.onscroll = () => { 
+        removeOverlayIcon();
         sel.onscroll = null;
-      }
-    })
+      } 
+    });
+  }
+
+  function removeOverlayIcon(){
+    $$(".overlayicon").forEach(sel2 => {
+      sel2.style.opacity = 0.0; //"rgba(255, 255, 255, 0.0)";
+    });
   }
 
   function createGUI(models) {
@@ -152,6 +159,12 @@ export function createDemo(divId, modelsSet) {
       let oai = document.createElement('a')
       oai.innerHTML = params.modelname + " (OpenAI Microscope)"
       oai.href = "https://microscope.openai.com/models/inceptionv1/" + params.modelname.substring(0,8) + "0/" + params.modelname.substring(8)
+      $("#texhinttext").innerHTML = '';
+      $("#texhinttext").appendChild(oai);
+    } else if (params.modelname.startsWith('mondrian')){
+      let oai = document.createElement('a')
+      oai.innerHTML = "Contre-Composition (Hommage a Mondrian)"
+      oai.href = "https://www.bukowskis.com/en/auctions/H042/96-franciska-clausen-contre-composition-composition-neoplasticiste-hommage-a-mondrian";
       $("#texhinttext").innerHTML = '';
       $("#texhinttext").appendChild(oai);
     } else {

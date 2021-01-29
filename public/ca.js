@@ -147,6 +147,10 @@ const PREFIX = `
         bi = vec2(bi.x-bi.y*u_hexGrid, bi.y*2.0);
         return dot(a,a)<dot(b,b) ? vec4(a, ai) : vec4(b, bi);    
     }
+
+    vec2 hex2screen(vec2 u) {
+        return vec2(u.x + u.y/2.0, u.y*1.732/2.0); 
+    }
 `;
 
 const PROGRAMS = {
@@ -158,11 +162,13 @@ const PROGRAMS = {
     void main() {
 
         vec2 xy = u_pos;
-        if (u_hexGrid > 0.0) {
-            vec4 r = getHex(u_pos - u_output.size*0.5);
-            xy = r.zw + u_output.size*0.5;
-        }
         vec2 xy_out = getOutputXY();
+        if (u_hexGrid > 0.0) {
+            // vec4 r = getHex(u_pos - u_output.size*0.5);
+            // xy = r.zw + u_output.size*0.5;
+            xy_out = hex2screen(xy_out - u_output.size*0.5);
+            xy_out = xy_out + u_output.size*0.5;
+        }
         vec2 diff = abs(xy_out-xy);
         diff = min(diff, u_output.size-diff);
         if (length(diff)>=u_r) 

@@ -243,11 +243,19 @@ input[type="radio"] {
   z-index: 1;
   pointer-events: none;
   height: 100%;
-  background-image: url(images/mouse.svg), linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.4) 10%, rgba(255,255,255,0.4) 90%, rgb(255,255,255) 100%);
+  background: linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 10%, rgba(255,255,255,0.0) 90%, rgb(255,255,255) 100%);
+}
+
+.overlayicon {
+  z-index: 1;
+  pointer-events: none;
+  height: 100%;
+  background: url(images/mouse.svg) rgba(255, 255, 255, 0.4);
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  transition: background 1.0s ease-in-out;
+  opacity: 1.0;
+  transition: opacity 1.0s ease-out;
 }
 
 #origtex {
@@ -286,12 +294,21 @@ input[type="radio"] {
     z-index: 1;
     pointer-events: none;
     height: 100%;
-    background-image: url(images/touch.svg), linear-gradient(to right, rgb(255,255,255) 0%, rgba(255,255,255,0.4) 10%, rgba(255,255,255,0.4) 90%, rgb(255,255,255) 100%);
-    background-size: contain;
+    background: linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 10%, rgba(255,255,255,0.0) 90%, rgb(255,255,255) 100%);
+  }
+
+  .overlayicon {
+    z-index: 1;
+    pointer-events: none;
+    height: 100%;
+    background: url(images/touch.svg) rgba(255, 255, 255, 0.4);
+    background-size: 55px;
     background-position: center;
     background-repeat: no-repeat;
-    transition: background 1.0s ease-in-out;
+    opacity: 1.0;
+    transition: opacity 1.0s ease-out;
   }
+
   .pattern-selector-title {
     padding-bottom: 0%;
   }
@@ -326,12 +343,12 @@ input[type="radio"] {
   scroll-snap-align: center;
 }
 
-#dtd-overlay, #dtd{
+.dtd-overlay, #dtd{
   grid-column: 1;
   grid-row: 2;
 }
 
-#inception-overlay, #inception{
+.inception-overlay, #inception{
   grid-column: 1;
   grid-row: 4;
 }
@@ -455,14 +472,18 @@ input[type="radio"] {
     <div class="pattern-selector-title">
       <span>Textures</span>
     </div>
-    <div id="dtd-overlay" class="overlaygrad">
+    <div class="dtd-overlay overlaygrad">
+    </div>
+    <div class="dtd-overlay overlayicon">
     </div>
     <div id="dtd" class="pattern-selector">
     </div>
     <div class="pattern-selector-title" id="inception_selector">
       <span>Inception</span>
     </div>
-    <div id="inception-overlay" class="overlaygrad">
+    <div class="inception-overlay overlaygrad">
+    </div>
+    <div class="inception-overlay overlayicon">
     </div>
     <div id="inception" class="pattern-selector">
     </div>
