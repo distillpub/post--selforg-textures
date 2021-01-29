@@ -20,8 +20,8 @@ export function createDemo(divId, modelsSet) {
   let paused = false;
 
   const canvas = $('#demo-canvas');
-  canvas.width = W*6;
-  canvas.height = H*6;
+  canvas.width = W;
+  canvas.height = H;
   const gl = canvas.getContext("webgl");
 
   const maxZoom = 32.0;
@@ -37,6 +37,7 @@ export function createDemo(divId, modelsSet) {
     zoom: 1.0,
   };
   let gui = null;
+  let currentTexture = null;
   
   async function initLegend(models) {
     const brush2idx = Object.fromEntries(models.model_names.map((s, i) => [s, i]));
@@ -59,16 +60,40 @@ export function createDemo(divId, modelsSet) {
       texture.style.backgroundSize = "" + (w*100) + "% " + (h*100) + "%";
       texture.id = name; //html5 support arbitrary id:s
       texture.className = 'texture-square';
-      texture.onclick = ()=>setModel(name);
+      texture.onclick = () => {
+        currentTexture.style.borderColor = "white";
+        currentTexture = texture;
+        texture.style.borderColor = "rgb(245 140 44)";
+        if (window.matchMedia('(min-width: 500px)').matches){
+          texture.scrollIntoView({behavior: "smooth", block: "center", inline: "nearest"})
+        } else {
+          texture.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"})
+        }
+        setModel(name);
+      };
       if (name.startsWith('mixed')){ 
         $("#inception").appendChild(texture);
       } else {
         $('#dtd').appendChild(texture);
       }
-      setModel('interlaced_0172');
+      currentTexture = texture;
     });
-
-
+    setModel('interlaced_0172');
+    $$(".pattern-selector").forEach(sel => {
+      sel.onscroll = () => {
+        console.log(sel)
+        $$(".overlaygrad").forEach(sel2 => {
+          if (window.matchMedia('(min-width: 500px)').matches){
+            console.log('x')
+            sel2.style.backgroundImage = "linear-gradient(to bottom, white 0%, transparent 10%, transparent 90%, white 100%)";
+          } else {
+            console.log('y')
+            sel2.style.backgroundImage = "linear-gradient(to right, white 0%, transparent 10%, transparent 90%, white 100%)";
+          }
+          })
+        sel.onscroll = null;
+      }
+    })
   }
 
   function createGUI(models) {
