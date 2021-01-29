@@ -64,7 +64,7 @@ export function createDemo(divId, modelsSet) {
         currentTexture.style.borderColor = "white";
         currentTexture = texture;
         texture.style.borderColor = "rgb(245 140 44)";
-        if (!window.matchMedia('(min-width: 500px)').matches){
+        if (!window.matchMedia('(min-width: 500px)').matches && navigator.userAgent.includes("Chrome")){
           texture.scrollIntoView({behavior: "smooth", block: "nearest", inline: "center"})
         }
         setModel(name);
@@ -82,10 +82,8 @@ export function createDemo(divId, modelsSet) {
         console.log(sel)
         $$(".overlaygrad").forEach(sel2 => {
           if (window.matchMedia('(min-width: 500px)').matches){
-            console.log('x')
             sel2.style.backgroundImage = "linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0) 10%, rgba(255,255,255,0) 90%, rgb(255,255,255) 100%)";
           } else {
-            console.log('y')
             sel2.style.backgroundImage = "linear-gradient(to right, rgb(255,255,255) 0%, rgba(255,255,255,0) 10%, rgba(255,255,255,0) 90%, rgb(255,255,255) 100%)";
           }
           })
