@@ -158,10 +158,12 @@ const PROGRAMS = {
     uniform vec2 u_pos;
     uniform float u_r;
     uniform vec4 u_brush;
+    uniform float u_zoom;
 
     void main() {
 
         vec2 xy = u_pos;
+        xy = (xy + u_output.size*(0.5)*(u_zoom-1.0))/u_zoom;
         vec2 xy_out = getOutputXY();
         if (u_hexGrid > 0.0) {
             // vec4 r = getHex(u_pos - u_output.size*0.5);
@@ -171,7 +173,7 @@ const PROGRAMS = {
         }
         vec2 diff = abs(xy_out-xy);
         diff = min(diff, u_output.size-diff);
-        if (length(diff)>=u_r) 
+        if (length(diff)*u_zoom>=u_r) 
           discard;
         setOutput(u_brush);
 
@@ -613,14 +615,14 @@ export class CA {
 
     paint(x, y, r, brush) {
         this.runLayer(this.progs.paint, this.buf.control, {
-            u_pos: [x, y], u_r: r, u_brush: [brush, 0, 0, 0],
+            u_pos: [x, y], u_r: r, u_brush: [brush, 0, 0, 0], u_hexGrid: this.hexGrid, u_zoom: 1.0 
         });
     }
 
-    clearCircle(x, y, r, brush) {
-        console.log(x, y)
+    clearCircle(x, y, r, brush, zoom=1.0) {
+        console.log(zoom);
         self.runLayer(self.progs.paint, this.buf.state, {
-            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0], u_hexGrid: this.hexGrid
+            u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0], u_hexGrid: this.hexGrid, u_zoom: zoom
         });
     }
 

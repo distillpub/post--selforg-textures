@@ -132,7 +132,7 @@ export function createDemo(divId, modelsSet) {
   function click(pos) {
     const [x, y] = pos;
     const [px, py] = prevPos;
-    ca.clearCircle(x, y, params.brushSize);
+    ca.clearCircle(x, y, params.brushSize, null, params.zoom);
     // ca.paint(x, y, params.brushSize, params.model, [x - px, y - py]);
     prevPos = pos;
   }
