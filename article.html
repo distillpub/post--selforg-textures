@@ -143,7 +143,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>This NCA also exhibits an algorithm for solving consistency in a striped pattern. The seams in ill-fitting stripes travel up, or down, the stripe, until either they merge to form a single straight stripe, or a stripe shrinks and disappears. Were this to be implemented algorithmically with local communication, it&#39;s not infeasible that a similar algorithm for finding consistency among the stripes would be used.</p>
 <h3 id='related-work'>Related work</h3>
-<p>Pattern generation is by no means a novel field. There has been extensive work predating deep-learning, in particular suggesting deep links between spatial patterning of anatomical structure and temporal patterning of cognitive and computational processes (e.g., reviewed in [[Pezzulo_Levin_2015]]@). Hans Spemann, one of the classical heroes of developmental biology, said "Again and again terms have been used which point not to physical but to psychical analogies. It was meant to be more than a poetical metaphor. It was meant to my conviction that the suitable reaction of a germ fragment, endowed with diverse potencies, in an embryonic &#39;field&#39;... is not a common chemical reaction, like all vital processes, are comparable, to nothing we know in such degree as to vital processes of which we have the most intimate knowledge." [[Speman_1938]].  More recently, Grossberg quantitatively laid out important similarities between developmental patterning and computational neuroscience[[Grossberg_1978]]. As briefly touched upon, the inspiration for much of the work came from Turing&#39;s work on pattern generation through local interaction, and later papers based on this principle. However, we also wish to acknowledge some works that we feel have kinship with ours. </p>
+<p>Pattern generation is by no means a novel field. There has been extensive work predating deep-learning, in particular suggesting deep links between spatial patterning of anatomical structure and temporal patterning of cognitive and computational processes (e.g., reviewed in <d-cite key="Pezzulo_Levin_2015"></d-cite>). Hans Spemann, one of the classical heroes of developmental biology, said "Again and again terms have been used which point not to physical but to psychical analogies. It was meant to be more than a poetical metaphor. It was meant to my conviction that the suitable reaction of a germ fragment, endowed with diverse potencies, in an embryonic &#39;field&#39;... is not a common chemical reaction, like all vital processes, are comparable, to nothing we know in such degree as to vital processes of which we have the most intimate knowledge." <d-cite key="Speman_1938"></d-cite>.  More recently, Grossberg quantitatively laid out important similarities between developmental patterning and computational neuroscience <d-cite key="Grossberg_1978"></d-cite>. As briefly touched upon, the inspiration for much of the work came from Turing&#39;s work on pattern generation through local interaction, and later papers based on this principle. However, we also wish to acknowledge some works that we feel have kinship with ours. </p>
 <h4 id='patch-sampling'>Patch sampling</h4>
 <p>Early work in pattern generation focused on texture sampling. Patches were often sampled from the original image and reconstructed or rejoined in different ways to obtain an approximation of the texture. This method has also seen recent success with the work of Gumin <d-cite key="Gumin"></d-cite>.</p>
 <h4 id='deep-learning'>Deep learning</h4>
@@ -229,6 +229,16 @@ Sobel_x & Sobel_y & Laplacian
 </figure>
 
 <p>Stochastic updates teach the cells to be somewhat robust to asynchronous updates. We investigate this property by taking it to an extreme - how do the cells react if two manifolds are allowed to communicate, but one runs the NCA at a different speed than the other? The result is surprisingly stable - the CA is still able to construct and maintain a consistent texture across the combined manifold. </p>
+<h4 id='failure-cases'>Failure cases</h4>
+<p>What can often inform us more about a system is the failure modes it experiences. Our model has many quirks, and is unable to learn certain patterns. Below are some examples.</p>
+
+
+<figure>
+<img src="images/failure.png"></img>
+<figcaption>Failure cases of the NCA.</figcaption>
+</figure>
+
+<p>Some patterns are repl</p>
 <h3 id='hidden-states'>Hidden states</h3>
 <p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells or even emit different chemical signals to diffuse over the local substrate. </p>
 
