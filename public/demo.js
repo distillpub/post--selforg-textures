@@ -81,7 +81,7 @@ export function createDemo(divId, modelsSet) {
         texture.style.borderColor = "rgb(245 140 44)";
         gridBox.prepend(texture);
       } else {
-        gridBox.appendChild(texture);
+        gridBox.insertBefore(texture, gridBox.lastElementChild);
       }
     });
     setModel('interlaced_0172');

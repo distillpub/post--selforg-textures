@@ -277,8 +277,21 @@ input[type="radio"] {
   line-height: 2em;
 }
 
+.whitespace {
+  grid-column: 1/-1;
+  height: 5px;
+  width: 1px;
+}
+
 /* PHONES */
 @media (max-width: 500px) {
+  .whitespace {
+    grid-column: auto;
+    height: 1px;
+    width: 1px;
+    /* Also a hack - indends the point at which scroll starts... */
+    margin-right: 55px;
+  }
   #pattern-controls {
     grid-template-rows: min-content 64px min-content 64px 0.25fr 0.1fr;
   }
@@ -288,13 +301,14 @@ input[type="radio"] {
     overflow-x: scroll;
     overflow-y: hidden;
     padding-top: 0%;
+    padding-left: 2%;
     overscroll-behavior-y: auto;
   }
   .overlaygrad {
     z-index: 1;
     pointer-events: none;
     height: 100%;
-    background: linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 10%, rgba(255,255,255,0.0) 90%, rgb(255,255,255) 100%);
+    background: linear-gradient(to right, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 5%, rgba(255,255,255,0.0) 95%, rgb(255,255,255) 100%);
   }
 
   .overlayicon {
@@ -396,10 +410,6 @@ input[type="radio"] {
   border: 2px solid goldenrod;
 }
 
-.whitespace {
-  grid-column: 1/-1;
-  height: 10px;
-}
 
 </style>
 
@@ -477,6 +487,8 @@ input[type="radio"] {
     <div class="dtd-overlay overlayicon">
     </div>
     <div id="dtd" class="pattern-selector">
+      <!-- a hacky way to add some padding, so the fadeout doesn't cover items in the scroll. -->
+      <div class="whitespace"></div>
     </div>
     <div class="pattern-selector-title" id="inception_selector">
       <span>Inception</span>
@@ -486,6 +498,7 @@ input[type="radio"] {
     <div class="inception-overlay overlayicon">
     </div>
     <div id="inception" class="pattern-selector">
+      <div class="whitespace"></div>
     </div>
     <div id="texhint">
       <div id="origtex">
