@@ -308,6 +308,11 @@
       grid-column: middle;
     }
 
+    /*remove h4 header uppercase (present in distill template)*/
+    d-article h4 {
+      text-transform:none;
+    }
+
     /* so the headings in the appendix are on one line in narrow screens */
     @media(max-width: 1000px) {
       d-appendix h3 {
