@@ -42,7 +42,7 @@ $\frac{\partial \mathbf{s} }{\partial  t } = f(\textbf{s}, \nabla_\mathbf{x} \te
 
 <p>In our case, the logical approach is to discretize the continuous 2D image space into a 2D raster grid. Boundary conditions are of concern but we can address them by moving to a toroidal world where each dimension wraps around on itself.</p>
 
-<p>Our next step towards representing a PDE with cellular automata is to discretize the gradient and Laplacian operators. For this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete Laplace operator, as below. </p>
+<p>Our next step towards representing a PDE with cellular automata is to discretize the gradient and Laplacian operators. For this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete Laplace operator, as below. We pick these for ease of use.</p>
 
 <figure>
 $ \begin{array}{ c c c }
@@ -181,9 +181,9 @@ Sobel_x & Sobel_y & Laplacian
 <h4 id='model-'>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation. </p>
 <h4 id='loss-function-'>Loss function: </h4>
-<p>We use VGG, as before. Our loss maximizes the activations of the chosen neurons in VGG, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of VGG frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
+<p>In this experiment we use Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>. Our loss maximizes the activations of the chosen neurons, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of the Inception frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
 <h4 id='dataset-'>Dataset: </h4>
-<p>There is no explicit dataset for this task. VGG is trained on ImageNet. The layers and neurons we chose to excite are chosen qualitatively using OpenAI Microscope.</p>
+<p>There is no explicit dataset for this task. Inception is trained on ImageNet. The layers and neurons we chose to excite are chosen qualitatively using OpenAI Microscope.</p>
 <h4 id='results'>Results:</h4>
 <p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions. In other words, resulting NCAs do not stay still.</p>
 
@@ -202,7 +202,7 @@ Sobel_x & Sobel_y & Laplacian
 <video src='videos/moving_thread.mov' autoplay loop muted controls style='width: 325px'></video>
 <figcaption>An NCA trained to excite <b>mixed3b_454</b> in VGG.</figcaption>
 </figure>
-<p>In textures that are composed of threads or lines, or in certain excitations of VGG neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
+<p>In textures that are composed of threads or lines, or in certain excitations of Inception neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
 
 
 <h3 id='robustness'>Robustness</h3>
@@ -273,7 +273,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>Analysis of these hidden states is something of a dark art; it is not always possible to draw rigorous conclusions about what is happening. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs. We also hypothesize that it may be possible to modify or alter hidden states in order to affect the morphology and behaviour of NCA. </p>
 <h2 id='conclusion'>Conclusion</h2>
-<p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pretrained VGG network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
+<p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pretrained nerual network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
 
 
 </d-article>
