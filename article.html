@@ -254,20 +254,22 @@ Sobel_x & Sobel_y & Laplacian
 <figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br> An NCA trained to excite <b>mixed4b_70</b> in VGG. Notice the hidden states appear to encode information about structure. "Threads" along the major diagonal (NW - SE) appear primarily green, while those running along the anti-diagonal appear blue, indicating that these have differing internal states, despite being effectively indistinguishable in RGB space.</figcaption>
 </figure>
 
-<p>In the principal components, we see a pattern which is similar to the visible channels. However, the &quot;threads&quot; pointing in each diagonal direction have different colours - one diagonal is green and the other is a pale blue. This suggests that one of the things encoded into the hidden states is the direction of a &quot;thread&quot;, likely to allow cells that are inside one of these threads to keep track of which direction the thread is growing, or moving, in. </p>
+<p>In the principal components of this coral-like texture, we see a pattern which is similar to the visible channels. However, the &quot;threads&quot; pointing in each diagonal direction have different colours - one diagonal is green and the other is a pale blue. This suggests that one of the things encoded into the hidden states is the direction of a &quot;thread&quot;, likely to allow cells that are inside one of these threads to keep track of which direction the thread is growing, or moving, in. </p>
 
 <p></p>
 <figure>
 <video src='videos/chequered_hidden.mp4' autoplay loop muted controls style='width: 650px'></video>
 <figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br> An NCA trained to produce a texture based on DTD image <b>cheqeuered_0121</b>. Notice the structure of squares - with a gradient occurring inside the structure of each square, evidencing that structure is being encoded in hidden state.</figcaption>
 </figure>
+<p>The chequerboard pattern likewise lends itself to some qualitative analysis and hints at a fairly simple mechanism for maintaining the shape of squares. Each square has a clear gradient in PCA space across the diagonal, and the values this gradient traverses differ for the white and black squares. We find it likely the gradient is used to provide a local coordinate system for creating and sizing the squares. </p>
+
 <p></p>
 <figure>
 <video src='videos/eyes_hidden.mp4' autoplay loop muted controls style='width: 650px'></video>
 <figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br>  An NCA trained to excite <b>mixed4c_208</b> in VGG. The visible body of the eye is clearly demarcated in the hidden states. There is also a "halo" which appears to modulate growth of any solitons immediately next to each other. This halo is barely visible in the RGB channels.</figcaption>
 </figure> 
 
-<p>Analysis of these hidden states is something of a dark art; it is not always possible to draw rigorous conclusions about what is happening. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs.</p>
+<p>Analysis of these hidden states is something of a dark art; it is not always possible to draw rigorous conclusions about what is happening. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs. We also hypothesize that it may be possible to modify or alter hidden states in order to affect the morphology and behaviour of NCA. </p>
 <h2 id='conclusion'>Conclusion</h2>
 <p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pretrained VGG network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
 
@@ -275,9 +277,13 @@ Sobel_x & Sobel_y & Laplacian
 </d-article>
 <d-appendix>
 <h3 id='acknowledgments'>Acknowledgments</h3>
-
+<p>We'd like to thank Sam Greydanus for proofreading and giving extensive feedback for the article. …</p>
 <h3 id='author-contributions'>Author Contributions</h3>
+<p><strong>Research</strong>: Alexander proposed using Neural CA for texture synthesis and feature visualization and prototyped the TF and PyTorch implementations. Eyvind Niklasson refined the implementation and performed most of the article experiments.</p>
 
+<p><strong>Demos</strong>: Alexander implemented the WebGL NCA engine. Eyvind implemented the demo UI.</p>
+
+<p><strong>Writing and Diagrams</strong>: Eyvind wrote most of the article text and created most of the diagrams and videos. Michael provided the biological context for the article. Alexander and Ettore contributed to the content.</p>
 <h3 id='an-aside-solitons-and-lenia'>An Aside: Solitons and Lenia</h3>
 <p>The motion of waves propagating through a medium can be described using the classical wave equation. The equation below defines the change of some quantity $u$ (be it the surface height map of a body of water, the position of a vibrating string, etc.) with respect to the laplacian of $u$. $c$ ends up being the propagation speed of the wave.</p>
 
