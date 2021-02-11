@@ -29,7 +29,7 @@
 <h4 id='pdes'>PDEs</h4>
 <p>In &quot;The Chemical Basis of Morphogenesis&quot; <d-cite key="Turing_1990"></d-cite>, Alan Turing suggested that simple physical processes of reaction and diffusion, modelled by partial differential equations, lie behind pattern formation in nature, such as the aforementioned Zebra stripes. Extensive work has since been done to identify PDEs modeling reaction-diffusion and evaluating their behaviour. One of the more celebrated examples is the Gray-Scott model of reaction diffusion (<d-cite key="Lee_McCormick_Ouyang_Swinney_1993"></d-cite>,<d-cite key="Pearson_1993"></d-cite>). This process has a veritable zoo of interesting behaviour, explorable by simply tuning the two parameters. We strongly encourage readers to visit this <a href='http://mrob.com/pub/comp/xmorphia/'>interactive atlas</a> of the different regions of the Gray-Scott reaction diffusion model to get a sense for the extreme variety of behaviour hidden behind two simple knobs. The more adventurous can even <a href='https://groups.csail.mit.edu/mac/projects/amorphous/jsim/sim/GrayScott.html'>play with a simulation locally</a> or <a href='https://mrob.com/pub/comp/xmorphia/ogl/index.html'>in the browser</a>.</p>
 
-<p>We propose a somewhat more general version of the above systems, described by a simple Partial Differential Equation (PDE) over the state space of an image. </p>
+<p>To tackle the problem of reproducing our textures, we propose a more general version of the above systems, described by a simple Partial Differential Equation (PDE) over the state space of an image. </p>
 
 <figure>
 $\frac{\partial \mathbf{s} }{\partial  t } = f(\textbf{s}, \nabla_\mathbf{x} \textbf{s}, \nabla_\mathbf{x}^{2}\textbf{s})$
