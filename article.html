@@ -236,14 +236,12 @@ Sobel_x & Sobel_y & Laplacian
 <p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two CAs sharing the state is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
 <h4 id='failure-cases'>Failure cases</h4>
 <p>The failure modes of a complex system can teach us a great deal about its internal structure and process. Our model has many quirks and sometimes these prevent it from learning certain patterns. Below are some examples.</p>
-
-
-
+<p></p>
 <figure>
 <img src="images/fail_mondrian.jpeg" style="width:30%; max-width: 150px;"></img>
 <img src="images/fail_sprinkle.jpeg" style="width:30%; max-width: 150px;"></img>
 <img src="images/fail_chequerboard.jpeg" style="width:30%; max-width: 150px;"></img>
-<figcaption>Three failure cases of the NCA. Template on bottom and NCA output on top for each, respectively. Failure modes include incorrect colours, chequerboard artefacts, and incorrect size or shape reproduction.</figcaption>
+<figcaption>Three failure cases of the NCA. Bottom row shows target texture samples, top row are corresponding NCA outputs. Failure modes include incorrect colours, chequerboard artefacts, and incoherent image structure.</figcaption>
 </figure>
 
 <p>Some patterns are reproduced somewhat accurately in terms of structure, but not in colour, while some are the opposite. Others fail completely. It is difficult to determine whether these failure cases have their roots in the parametrization (the NCA), or in the hard-to-interpret gradient signals from VGG. Existing work with style transfer suggests that using a loss on Gram matrices in VGG can introduce instabilities<d-cite key="Risser_Wilmot_Barnes_2017"></d-cite>, that are similar to the ones we see here. We hypothesize that this effect explains the failures in reproducing colors. The structural failures, meanwhile, may be caused by the NCA parameterization, which makes it difficult for cells to establish long-distance communication with one another.</p>
@@ -285,7 +283,7 @@ Sobel_x & Sobel_y & Laplacian
 </d-article>
 <d-appendix>
 <h3 id='acknowledgments'>Acknowledgments</h3>
-<p>We'd like to thank Sam Greydanus for especially thoughtful proofreading and giving extensive feedback throughout the article. We also extend our gratitude to the other reviewers; Maximilian Otte, Aleksandr Groznykh and Smitty van Bodegom. Finally, we would like to acknowledge the continued support of Blaise Aguera y Arcas, without which this work wouldn&#39;t be possible. </p>
+<p>We'd like to thank Sam Greydanus for especially thoughtful proofreading and giving extensive feedback throughout the article. We also extend our gratitude to the other reviewers; Maximilian Otte, Aleksandr Groznykh, and Smitty van Bodegom. Finally, we would like to acknowledge the continued support of Blaise Aguera y Arcas, without which this work wouldn&#39;t be possible. </p>
 <h3 id='author-contributions'>Author Contributions</h3>
 <p><strong>Research</strong>: Alexander proposed using Neural CA for texture synthesis and feature visualization and prototyped the TF and PyTorch implementations. Eyvind refined the implementation and performed most of the article experiments.</p>
 
