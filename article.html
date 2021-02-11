@@ -237,6 +237,8 @@ Sobel_x & Sobel_y & Laplacian
 <video src='videos/fig_13_chequered_0121.mp4' autoplay loop controls muted style='width: 450px'></video>
 <figcaption>An NCA is evaluated for a number of steps. The surrounding border of cells are then also turned into NCA cells. The cells have no difficulty communicating with the "finished" pattern and achieving consistency. </figcaption>
 </figure>
+
+<p>An even more drastic example of this robustness to time asynchronicity can be seen above. Here, an NCA is iterated until it achieves perfect consistency in a pattern. Then, the state space is expanded, introducing a border of new cells around the existing state. This border quickly interfaces with the existing cells and settles in a consistent pattern, with almost no perturbation to the already-converged inner state.</p>
 <h4 id='failure-cases'>Failure cases</h4>
 <p>The failure modes of a complex system can teach us a great deal about its internal structure and process. Our model has many quirks and sometimes these prevent it from learning certain patterns. Below are some examples.</p>
 <p></p>
