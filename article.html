@@ -70,8 +70,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>With all the pieces in place, we now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that as our grid becomes very fine, and the asynchronous updates approach uniformity, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE as we defined it.</p>
 <h4 id='to-neural-networks'>To Neural Networks</h4>
-<p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks. We provide both a Tensorflow and a minimal PyTorch implementation for reference, and refer to these for details on our implementation decisions.  </p>
-
+<p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks. We provide both a Tensorflow and a minimal PyTorch implementation for reference, and refer to these for details on our implementation.  </p>
 <h3 id='ncas-as-pattern-generators'>NCAs as pattern generators</h3>
 <h4 id='model'>Model:</h4>
 <p></p>
@@ -226,7 +225,7 @@ Sobel_x & Sobel_y & Laplacian
 <img src='images/coral_hex.png' style='width: 450px'></img>
 <figcaption>The same texture evaluated on a square and hexagonal grid, respectively.</figcaption>
 </figure>
-<h4 id='timesynchronization'>Time-synchronization</h4>
+<h4 id='timesynchronization-'>Time-synchronization </h4>
 <p></p>
 <figure>
 <video src='videos/time_unsynced.mp4' autoplay loop controls muted style='width: 450px'></video>
@@ -234,6 +233,10 @@ Sobel_x & Sobel_y & Laplacian
 </figure>
 
 <p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two CAs sharing the state is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
+<figure>
+<video src='videos/fig_13_chequered_0121.mp4' autoplay loop controls muted style='width: 450px'></video>
+<figcaption>An NCA is evaluated for a number of steps. The surrounding border of cells are then also turned into NCA cells. The cells have no difficulty communicating with the "finished" pattern and achieving consistency. </figcaption>
+</figure>
 <h4 id='failure-cases'>Failure cases</h4>
 <p>The failure modes of a complex system can teach us a great deal about its internal structure and process. Our model has many quirks and sometimes these prevent it from learning certain patterns. Below are some examples.</p>
 <p></p>
@@ -273,7 +276,7 @@ Sobel_x & Sobel_y & Laplacian
 <video src='videos/eyes_hidden.mp4' autoplay loop muted controls style='width: 650px'></video>
 <figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br>  An NCA trained to excite <b>mixed4c_208</b> in Inception. The visible body of the eye is clearly demarcated in the hidden states. There is also a "halo" which appears to modulate growth of any solitons immediately next to each other. This halo is barely visible in the RGB channels.</figcaption>
 </figure> 
-<p>We find surprising insight in NCA trained on Inception as well. In this case, the structure of the eye is clearly encoded in the hidden state with the body composed primarily of one combination of principal components, and an halo, seemingly to prevent collisions of the eye solitons, composed of another set of principle components.</p>
+<p>We find surprising insight in NCA trained on Inception as well. In this case, the structure of the eye is clearly encoded in the hidden state with the body composed primarily of one combination of principal components, and an halo, seemingly to prevent collisions of the eye solitons, composed of another set of principal components.</p>
 
 <p>Analysis of these hidden states is something of a dark art; it is not always possible to draw rigorous conclusions about what is happening. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs. We also hypothesize that it may be possible to modify or alter hidden states in order to affect the morphology and behaviour of NCA. </p>
 <h2 id='conclusion'>Conclusion</h2>
