@@ -29,20 +29,26 @@
 <h4 id='pdes'>PDEs</h4>
 <p>In &quot;The Chemical Basis of Morphogenesis&quot; <d-cite key="Turing_1990"></d-cite>, Alan Turing suggested that simple physical processes of reaction and diffusion, modelled by partial differential equations, lie behind pattern formation in nature, such as the aforementioned Zebra stripes. Extensive work has since been done to identify PDEs modeling reaction-diffusion and evaluating their behaviour. One of the more celebrated examples is the Gray-Scott model of reaction diffusion (<d-cite key="Lee_McCormick_Ouyang_Swinney_1993"></d-cite>,<d-cite key="Pearson_1993"></d-cite>). This process has a veritable zoo of interesting behaviour, explorable by simply tuning the two parameters. We strongly encourage readers to visit this <a href='http://mrob.com/pub/comp/xmorphia/'>interactive atlas</a> of the different regions of the Gray-Scott reaction diffusion model to get a sense for the extreme variety of behaviour hidden behind two simple knobs. The more adventurous can even <a href='https://groups.csail.mit.edu/mac/projects/amorphous/jsim/sim/GrayScott.html'>play with a simulation locally</a> or <a href='https://mrob.com/pub/comp/xmorphia/ogl/index.html'>in the browser</a>.</p>
 
-<p>A somewhat more general version of the above systems can be described by a simple Partial Differential Equation (PDE) over the state space of an image. </p>
+<p>We propose a somewhat more general version of the above systems, described by a simple Partial Differential Equation (PDE) over the state space of an image. </p>
 
 <figure>
 $\frac{\partial \mathbf{s} }{\partial  t } = f(\textbf{s}, \nabla_\mathbf{x} \textbf{s}, \nabla_\mathbf{x}^{2}\textbf{s})$
 </figure>
 
-<p>Here, $f$ a function that depends on the gradient and Laplacian of the state space and determines the time evolution of this state space. Intuitively, we have defined a system where every point of the image changes with time, in a way that depends on how the image currently changes across space, with respect to its immediate neighbourhood. Readers may start to recognize the resemblance between this and another system based on immediately local interactions.</p>
+<p>Here, $f$ a function that depends on the gradient ($\nabla_\mathbf{x} \textbf{s}$) and Laplacian  ($\nabla_\mathbf{x}^{2}\textbf{s}$) of the state space and determines the time evolution of this state space. $s$ represents a k dimensional vector, whose first three components correspond to the visible RGB color channels. </p>
+
+<p>Intuitively, we have defined a system where every point of the image changes with time, in a way that depends on how the image currently changes across space, with respect to its immediate neighbourhood. Readers may start to recognize the resemblance between this and another system based on immediately local interactions.</p>
 <h4 id='to-cas'>To CAs</h4>
 
 <p>Differential equations governing natural phenomena are usually evaluated using numerical differential equation solvers. Indeed, this is sometimes the <strong>only</strong> way to solve them, as many PDEs and ODEs of interest do not have closed form solutions. This is even the case for some deceptively simple ones, such as the <a href='https://en.wikipedia.org/wiki/Three-body_problem'>three-body problem</a>. Numerically solving PDEs and ODEs is a vast and well-established field. One of the biggest hammers in the metaphorical toolkit for numerically evaluating differential equations is discretization: the process of converting the variables of the system from continuous space to a discrete space, where numerical integration is tractable. When using some ODEs to model a change in a phenomena over time, for example, it makes sense to advance through time in discrete steps, possibly of variable size. </p>
 
-<p>In our case, the logical approach is to discretize the continuous 2D image space into a 2D raster grid. Boundary conditions are of concern but we can address them by moving to a toroidal world where each dimension wraps around on itself.</p>
+<p>We now show that numerically integrating the aforementioned PDE equivalent to reframing the problem as a Neural Cellular Automata, with $f$ assuming the role of the CA rule. </p>
 
-<p>Our next step towards representing a PDE with cellular automata is to discretize the gradient and Laplacian operators. For this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete Laplace operator, as below. We pick these for ease of use.</p>
+<p>First, to discretize the space the logical approach is to discretize the continuous 2D image space into a 2D raster grid. Boundary conditions are of concern but we can address them by moving to a toroidal world where each dimension wraps around on itself. </p>
+
+<p>Similarly to space, we choose to treat time in a discretized fashion and evaluate our NCA at fixed-sized time steps. This is equivalent to Euler integration. However, here we make an important deviation from traditional numerical evaluation of PDEs, for two reasons. First, if all cells are updated synchronously, initial conditions $s_0$ must vary from cell-to-cell in order to break the symmetry. Second, the physical implementation of the synchronous model would require the existence of a global clock, shared by all cells. One way to work around the former, is by initializing the grid with random noise, but in the spirit of self organisation we instead choose to decouple the cell updates, by asynchronously evaluating the CA. We sample a subset of all cells at each time-step to update. This introduces both asynchronicity in time (cells will sometimes operate on information from their neighbours that is several timesteps old), and asymmetry in space, solving both aforementioned issues.</p>
+
+<p>Our next step towards representing a PDE with cellular automata is to discretize the gradient and Laplacian operators. For this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete Laplace operator, as below.</p>
 
 <figure>
 $ \begin{array}{ c c c }
@@ -62,9 +68,9 @@ Sobel_x & Sobel_y & Laplacian
 \end{array}$
 </figure>
 
-<p>We now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that, as our grid becomes very fine, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE.</p>
+<p>With all the pieces in place, we now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that, as our grid becomes very fine, and the asynchronous updates approach uniformity, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE as we defined it.</p>
 <h4 id='to-neural-networks'>To Neural Networks</h4>
-<p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks.  </p>
+<p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks. We provide both a Tensorflow and a minimal PyTorch implementation for reference, and refer to these for details on our implementation decisions.  </p>
 
 <h3 id='ncas-as-pattern-generators'>NCAs as pattern generators</h3>
 
@@ -234,6 +240,7 @@ Sobel_x & Sobel_y & Laplacian
 <p>The failure modes of a complex system can teach us a great deal about its internal structure and process. Our model has many quirks and sometimes these prevent it from learning certain patterns. Below are some examples.</p>
 
 
+
 <figure>
 <img src="images/failed_chequered.png"></img>
 <img src="images/failed_mondrian.png"></img>
@@ -273,7 +280,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>Analysis of these hidden states is something of a dark art; it is not always possible to draw rigorous conclusions about what is happening. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs. We also hypothesize that it may be possible to modify or alter hidden states in order to affect the morphology and behaviour of NCA. </p>
 <h2 id='conclusion'>Conclusion</h2>
-<p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pretrained nerual network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
+<p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pre-trained neural network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
 
 
 </d-article>
