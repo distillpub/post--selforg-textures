@@ -12,7 +12,7 @@
 <h2 id='patterns-textures-and-physical-processes'>Patterns, textures and physical processes</h2>
 <p></p>
 <figure>
-<img src='images/zebra.jpg' style='width: 450px'>
+<img src='images/zebra.jpg' style='width: 350px'>
 <figcaption>A pair of Zebra. Zebra are said to have unique stripes.</figcaption>
 </figure>
 
@@ -71,7 +71,7 @@ Sobel_x & Sobel_y & Laplacian
 <p>With all the pieces in place, we now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that as our grid becomes very fine, and the asynchronous updates approach uniformity, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE as we defined it.</p>
 <h4 id='to-neural-networks'>To Neural Networks</h4>
 <p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks. We provide both a Tensorflow and a minimal PyTorch implementation for reference, and refer to these for details on our implementation.  </p>
-<h3 id='ncas-as-pattern-generators'>NCAs as pattern generators</h3>
+<h3 id='nca-as-pattern-generators'>NCA as pattern generators</h3>
 <h4 id='model'>Model:</h4>
 <p></p>
 <figure style='margin-left: auto; margin-right: auto; grid-column: page; width: 100%; max-width: 800px' >
@@ -161,7 +161,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p></p>
 <figure>
-<img src='images/butterfly_eye.jpg' style='width: 450px'></img>
+<img src='images/butterfly_eye.jpg' style='width: 350px'></img>
 <figcaption>A butterfly with an "eye-spot" on the wings.</figcaption>
 </figure>
 
@@ -182,7 +182,7 @@ Sobel_x & Sobel_y & Laplacian
 <figcaption>An NCA trained to excite <b>mixed4a_472</b> in Inception.</figcaption>
 </figure>
 
-<h3 id='nca-inception-'>NCA Inception </h3>
+<h3 id='nca-with-inception-'>NCA with Inception </h3>
 <h4 id='model-'>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation, but with a different discriminator network: Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>.</p>
 <h4 id='loss-function-'>Loss function: </h4>
