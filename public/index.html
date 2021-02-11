@@ -1,6 +1,949 @@
+<!doctype html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://distill.pub/template.v2.js"></script>
+  <!-- <script src="/template.v2.js"></script> -->
+  <style>
+  </style>
+  <script src="twgl.min.js"></script>
+  <script type="module" src="./ca.js"></script>
+  <script type="module" src="./demo.js"></script>
+  <!-- TODO: REMOVE -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Growing Neural Cellular Automata">
+  <meta name="twitter:description" content="Training an end-to-end differentiable, self-organising cellular automata model of morphogenesis, able to both grow and regenerate specific patterns.">
+  <meta name="twitter:url" content="https://distill.pub/2020/growing-ca">
+  <meta name="twitter:image" content="https://znah.net/post--selforg-textures/public/thumbnail.jpg">
+  <meta name="twitter:image:width" content="560">
+  <meta name="twitter:image:height" content="295">
+</head>
+
+<body>
+
+  <d-front-matter>
+    <script type="text/json">{
+      "title": "Self-Organising Textures",
+      "description": "Neural Cellular Automata learn to generate textures, exhibiting surprising properties.",
+      "password": "textures",
+      "authors": [
+        {
+          "author": "Eyvind Niklasson",
+          "authorURL": "https://eyvind.me/",
+          "affiliation": "Google",
+          "affiliationURL": "https://ai.google/"
+        },
+        {
+          "author": "Alexander Mordvintsev",
+          "authorURL": "https://znah.net/",
+          "affiliation": "Google",
+          "affiliationURL": "https://ai.google/"
+        },
+        {
+          "author": "Ettore Randazzo",
+          "authorURL": "",
+          "affiliation": "Google",
+          "affiliationURL": "https://ai.google/"
+       },
+       {
+          "author": "Michael Levin",
+          "authorURL": "https://ase.tufts.edu/biology/labs/levin/",
+          "affiliation": "Tufts",
+          "affiliationURL": "https://tufts.edu/"
+	}
+      ],
+      "katex": {
+        "delimiters": [
+          {
+            "left": "$",
+            "right": "$",
+            "display": false
+          },
+          {
+            "left": "$$",
+            "right": "$$",
+            "display": true
+          }
+        ]
+      }
+    }</script>
+
+  </d-front-matter>
+
+  <style>
+   /* ****************************************
+    * Thread Info
+    ******************************************/
+
+    .thread-info {
+      background-color: hsl(54, 78%, 96%);
+      border-left: solid hsl(54, 33%, 67%) 1px;
+      padding: 1em;
+      color: hsla(0, 0%, 0%, 0.67);
+    }
+
+    #thread-nav {
+      margin-top: 20;
+      margin-bottom: 1.5rem;
+      display: grid;
+      grid-template-columns: 45px 2fr 3fr;
+      grid-template-areas:
+        'thread-icon explanation explanation '
+        'thread-icon prev next';
+      grid-column-gap: 1.5em;
+    }
+
+    @media (min-width: 768px) {
+      #thread-nav {
+        grid-template-columns: 65px 3fr 2fr;
+      }
+    }
+
+    #thread-nav .thread-icon {
+      grid-area: thread-icon;
+      padding: 0.5em;
+      justify-self: center;
+    }
+
+    #thread-nav .explanation {
+      grid-area: explanation;
+      font-size: 85%;
+      color: hsl(0, 0%, 0.33);
+    }
+
+    #thread-nav .prev {
+      grid-area: prev;
+    }
+
+    #thread-nav .prev::before {
+      content: '← Previous Article';
+    }
+
+    #thread-nav .overview {
+      scroll-behavior: smooth;
+    }
+
+    #thread-nav .overview::before {
+      content: '↑';
+      white-space: nowrap;
+      margin-right: 0.5em;
+    }
+
+    #thread-nav .next {
+      grid-area: next;
+      scroll-behavior: smooth;
+    }
+
+    #thread-nav .next::before {
+      content: 'Next Article →';
+    }
+
+    #thread-nav .next::before,
+    #thread-nav .prev::before {
+      display: block;
+      white-space: nowrap;
+      padding: 0.5em 0;
+      font-size: 80%;
+      font-weight: bold;
+      margin-top: 0px;
+      margin-right: 0.5em;
+      text-transform: uppercase;
+    }
+
+    #thread-nav .prev,
+    #thread-nav .next,
+    #thread-nav .overview {
+      font-size: 80%;
+      line-height: 1.5em;
+      font-weight: 600;
+      border-bottom: none;
+      color: #2e6db7;
+      /* margin-top: 0.25em; */
+      letter-spacing: 0.25px;
+    }
+
+    figure {
+      text-align: center;
+      margin-bottom: 0.5em;
+      margin-top: 0.5em;
+    }
+    figure img {
+      max-width: 100%;
+      width: unset;
+    }
+    video {
+      max-width: 100%;
+    }
+    .colab-root {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.75);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px!important;
+      text-decoration: none;
+      color: #aaa;
+      border: none;
+      font-weight: 300;
+      border: solid 1px rgba(0, 0, 0, 0.08);
+      border-bottom-color: rgba(0, 0, 0, 0.15);
+      text-transform: uppercase;
+      line-height: 16px;
+    }
+
+   span.colab-span {
+      background-image: url(images/colab.svg);
+      background-repeat: no-repeat;
+      background-size: 20px;
+      background-position-y: 2px;
+      display: inline-block;
+      padding-left: 24px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+
+    span.tf-span {
+      background-image: url(images/tf.svg);
+      background-repeat: no-repeat;
+      background-size: 15px;
+      background-position-y: 0px;
+      display: inline-block;
+      padding-left: 19px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+
+    span.pytorch-span {
+      background-image: url(images/pytorch.svg);
+      background-repeat: no-repeat;
+      background-size: 83px;
+      background-position-x: -32px;
+      background-position-y: -1px;
+      display: inline-block;
+      padding-left: 19px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+
+
+    a.colab-root:hover{
+      color: #666;
+      background: white;
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+
+    /* TOC */
+    @media(max-width: 1000px){
+      d-contents {
+        justify-self: start;
+        align-self: start;
+        grid-column-start: 2;
+        grid-column-end: 6;
+        padding-bottom: 0.5em;
+        margin-bottom: 1em;
+        padding-left: 0.25em;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        border-bottom-width: 1px;
+        border-bottom-style: solid;
+        border-bottom-color: rgba(0, 0, 0, 0.1);
+      }
+    } 
+    
+    @media (min-width: 1000px){
+      d-contents {
+        align-self: start;
+        grid-column-start: 1;
+        grid-column-end: 4;
+        justify-self: end;
+        padding-right: 3em;
+        padding-left: 2em;
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        border-right-width: 1px;
+        border-right-style: solid;
+        border-right-color: rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    @media (min-width: 1180px){
+      d-contents {
+        grid-column-start: 1;
+        grid-column-end: 4;
+        justify-self: end;
+        padding-right: 3em;
+        padding-left: 2em;
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        border-right-width: 1px;
+        border-right-style: solid;
+        border-right-color: rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    d-contents nav h3 {
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
+    d-contents nav a {
+      color: rgba(0, 0, 0, 0.8);
+      border-bottom: none;
+      text-decoration: none;
+    }
+
+    d-contents li {
+      list-style-type: none;
+    }
+
+    d-contents ul {
+      padding-left: 1em;
+    }
+    
+    d-contents nav ul li {
+      margin-bottom: .25em;
+    }
+
+    d-contents nav a:hover {
+      text-decoration: underline solid rgba(0, 0, 0, 0.6);
+    }
+
+    d-contents nav ul {
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+
+
+    d-contents nav>div {
+      display: block;
+      outline: none;
+      margin-bottom: 0.5em;
+    }
+
+    d-contents nav>div>a {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    d-contents nav>div>a:hover,
+    d-contents nav>ul>li>a:hover {
+        text-decoration: none;
+    }
+
+    /* code blocks to margins */
+    @media (min-width: 1600px) {
+      d-code {
+        margin-top: -10px;
+        grid-column-start: 12;
+        grid-column-end: 14; 
+      }
+    }
+    /* so title is on one line */
+    d-title h1, d-title p {
+      grid-column: middle;
+    }
+
+    /*remove h4 header uppercase (present in distill template)*/
+    d-article h4 {
+      text-transform:none;
+    }
+
+    /* so the headings in the appendix are on one line in narrow screens */
+    @media(max-width: 1000px) {
+      d-appendix h3 {
+        grid-column: text !important; 
+      } 
+    }
+
+  </style>
+  <script>
+  // hack to edit font size in code snippets. guaranteed a better way to do 
+  // this, but I'm not a webdev
+  window.onload = function() {
+    setTimeout(() => { document.querySelectorAll("d-code").forEach(function(e) {e.shadowRoot.querySelector('#code-container').style.fontSize = "0.7em"}); }, 3000);
+  }
+  </script>
+  <script>
+    //Autoplay videos when they're in view
+  </script>
+  <d-title>
+    <h1>Self-Organising Textures</h1>
+    <p>Neural Cellular Automata Model of Pattern Formation</p>
+
+  
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path><path d="M0 0h24v24H0z" fill="none"></path></symbol>
+    <symbol id="pauseIcon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path><path d="M0 0h24v24H0z" fill="none"></path></symbol>
+    <symbol id="resetIcon" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"></path><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></symbol>
+    <symbol id="zoomInIcon" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M12 10h-2v2H9v-2H7V9h2V7h1v2h2v1z"/></symbol>
+    <symbol id="zoomOutIcon" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></symbol>
+    <symbol id="mouse" viewBox="0 0 100 100"><path d="M32,41v18c0,9.9,8.1,18,18,18c9.9,0,18-8.1,18-18V41c0-9.9-8.1-18-18-18C40.1,23,32,31.1,32,41z M50,27c7.7,0,14,6.3,14,14  v18c0,7.7-6.3,14-14,14s-14-6.3-14-14V41C36,33.3,42.3,27,50,27z"></path><path d="M50,44c1.1,0,2-0.9,2-2v-6c0-1.1-0.9-2-2-2s-2,0.9-2,2v6C48,43.1,48.9,44,50,44z"></path><path d="M48.6,92.4C49,92.8,49.5,93,50,93s1-0.2,1.4-0.6l5-5c0.8-0.8,0.8-2,0-2.8s-2-0.8-2.8,0L50,88.2l-3.6-3.6  c-0.8-0.8-2-0.8-2.8,0c-0.8,0.8-0.8,2,0,2.8L48.6,92.4z"></path><path d="M48.6,7.6l-5,5c-0.8,0.8-0.8,2,0,2.8C44,15.8,44.5,16,45,16s1-0.2,1.4-0.6l3.6-3.6l3.6,3.6C54,15.8,54.5,16,55,16  s1-0.2,1.4-0.6c0.8-0.8,0.8-2,0-2.8l-5-5C50.6,6.8,49.4,6.8,48.6,7.6z"></path></symbol>
+</svg>
+
+<style>
+#demo {
+    font-size: 14px;
+    user-select: none;
+    grid-template-columns: auto;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    row-gap: 10px;
+}
+
+.hint a {
+  color: inherit;
+}
+
+@media (min-width: 1180px) {
+  #demo {
+    grid-template-columns: 512px 1fr;
+    grid-template-rows: auto;
+  }
+  #pattern-controls {
+    grid-row: 1;
+  }
+}
+
+#demo-canvas {
+    border: 1px solid lightgrey;
+    image-rendering: pixelated;
+    touch-action: none;
+    width: 100%;
+}
+
+#pattern-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: min-content 0.4fr min-content 0.4fr 0.3fr 0.1fr;
+    /*row-gap: 20px;*/
+    overflow: hidden;
+}
+
+.pattern-selector::-webkit-scrollbar {
+    display: none;
+}
+
+#demo-tip{
+    display: grid;
+    grid-template-columns: 40px auto;
+    align-items: center;
+    column-gap: 10px;
+    margin-bottom: 20px;
+}
+#pointer {
+    width: 40px;
+}
+#status {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+    font-family: monospace;
+}
+#model-hints {
+    color: rgba(0, 0, 0, 0.6);
+    grid-column: 1/3;
+}
+#model-hints span {
+    display: none;
+}
+.hint {
+    color: rgba(0, 0, 0, 0.6);
+    line-height: 1.4em;
+    user-select: text;
+}
+
+input[type=range] {
+  -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+  width: 95%; /* Specific width is required for Firefox. */
+  background: transparent; /* Otherwise white in Chrome */
+  margin-bottom: 8px;
+}
+
+.hint a {
+  font-size: 90%;
+}
+
+@media (max-width: 350px) {
+  .hint a {
+    font-size: 75%;
+  }
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+}
+
+input[type=range]:focus {
+  outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  cursor: pointer;
+
+  /* Hides the slider so custom styles can be added */
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+/* Thumb */
+
+/* Special styling for WebKit/Blink */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
+
+/* All the same stuff for Firefox */
+input[type=range]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  border: none;
+}
+
+/* All the same stuff for IE */
+input[type=range]::-ms-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: grey;
+  cursor: pointer;
+}
+
+/* Track */
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+input[type=range]::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+input[type="radio"] {
+    background-color: steelblue;
+}
+
+#colab-hero-div { 
+  /*grid-column: 1/3;*/
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(0, 0, 0, 0.1);
+  padding-top: 15px;
+  text-align: center;
+}
+
+#colab-hero {
+  margin: auto;
+  /*display: block;*/
+  text-align: center;
+  /*width: 200px;*/
+  height: 16px;
+}
+
+.pattern-selector {
+    grid-column: 1/3;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+    justify-items: center;
+    overflow-x: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-y: contain;
+    padding-top: 5px;
+}
+
+/*.pattern-selector > :last-child {*/
+    /*margin-bottom: 100%;*/
+/*}*/
+
+.pattern-selector-title{
+  grid-column: 1/3;
+  text-align: center;
+  font-weight: bold;
+  /*padding-bottom: 3%;*/
+  /*padding-top: 3px;*/
+}
+
+#inception_selector {
+  padding-top: 3%;
+}
+
+.overlaygrad {
+  z-index: 1;
+  pointer-events: none;
+  height: 100%;
+  background: linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 10%, rgba(255,255,255,0.0) 90%, rgb(255,255,255) 100%);
+}
+
+.overlayicon {
+  z-index: 1;
+  pointer-events: none;
+  height: 100%;
+  background: url(images/mouse.svg) rgba(255, 255, 255, 0.4);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 1.0;
+  transition: opacity 1.0s ease-out;
+}
+
+#origtex {
+  margin: auto;
+  margin-top: 10px;
+  height: 128px;
+  width: 128px;
+}
+
+#texhint{
+  height: 170px;
+  grid-column: 1/3;
+  margin-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(0, 0, 0, 0.1);
+  text-align: center;
+  line-height: 2em;
+}
+
+.whitespace {
+  grid-column: 1/-1;
+  height: 5px;
+  width: 1px;
+}
+
+/* PHONES */
+@media (max-width: 500px) {
+  .whitespace {
+    grid-column: auto;
+    height: 1px;
+    width: 1px;
+    /* Also a hack - indends the point at which scroll starts... */
+    margin-right: 55px;
+  }
+  #pattern-controls {
+    grid-template-rows: min-content 64px min-content 64px 0.25fr 0.1fr;
+  }
+  .pattern-selector {
+    grid-template-columns: repeat(100, minmax(64px, 1fr));
+    grid-template-rows: auto;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    padding-top: 0%;
+    padding-left: 2%;
+    overscroll-behavior-y: auto;
+  }
+  .overlaygrad {
+    z-index: 1;
+    pointer-events: none;
+    height: 100%;
+    background: linear-gradient(to right, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 5%, rgba(255,255,255,0.0) 95%, rgb(255,255,255) 100%);
+  }
+
+  .overlayicon {
+    z-index: 1;
+    pointer-events: none;
+    height: 100%;
+    background: url(images/touch.svg) rgba(255, 255, 255, 0.4);
+    background-size: 55px;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 1.0;
+    transition: opacity 1.0s ease-out;
+  }
+
+  .pattern-selector-title {
+    padding-bottom: 0%;
+  }
+  #texhint {
+    height: 135px;
+  }
+  #origtex {
+    height: 96px;
+    width: 96px;
+  }
+}
+
+.pattern-selector * {
+    cursor: pointer;
+}
+
+.texture-square {
+  /*background-image: url('textures/banded.png');*/
+  /*background-position:center;
+  background-repeat:no-repeat;
+  background-size:cover;
+  */
+  /* some weird kludge to allow same width as height */
+  --border-width: 5px;
+  border-style: solid;
+  box-sizing: border-box;
+  border-width: var(--border-width);
+  border-color: white;
+  width: 100%;
+  height: 0;
+  padding-top: calc(100% - 2*var(--border-width));
+  scroll-snap-align: center;
+}
+
+.dtd-overlay, #dtd{
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.inception-overlay, #inception{
+  grid-column: 1;
+  grid-row: 4;
+}
+
+.demo-controls {
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  grid-template-rows: min-content min-content;
+  gap: 0px 5px;
+  text-align: center;
+  line-height: 1.4em;
+
+}
+
+.icon {
+    width: 30px; height: 30px;
+    background: steelblue;
+    fill: white;
+    border-radius: 20px;
+    padding: 5px;
+    margin: 2px;
+    cursor: pointer;
+}
+
+.disabled {
+    background: grey;
+    cursor: default;
+}
+
+/* radio button groups */
+
+.button-group {
+  border-radius: 4px;
+  padding: 4px;
+  background: #eee;
+}
+.button-group input {
+  display: none;
+}
+.button-group img {
+  cursor: pointer;
+  border: 2px solid white;
+}
+.button-group input:checked + img{
+  border: 2px solid goldenrod;
+}
+
+
+</style>
+
+<!-- 
+<view id="alignRegular" viewBox="0 0 480 480"/>
+<view id="alignPolar" viewBox="480 0 480 480"/>
+<view id="alignDipole" viewBox="960 0 480 480"/>
+<view id="gridSquare" viewBox="1440 0 480 480"/>
+<view id="gridHex" viewBox="1920 0 480 480"/>
+<view id="rotation" viewBox="2400 0 480 480"/>
+-->
+
+<div class="l-body-outset grid" id="demo">
+
+  <div>
+    <canvas id="demo-canvas"></canvas>
+
+    <div class="demo-controls">
+      <div class="play-reset" style="text-align: left;">
+        <span id="play-pause">
+          <svg class="icon" id="play"><use xlink:href="#playIcon"></use></svg>
+          <svg class="icon" id="pause" style="display: none;"><use xlink:href="#pauseIcon"></use></svg>
+        </span>
+        <svg class="icon" id="reset"><use xlink:href="#resetIcon"></use></svg>
+      </div>
+      <div class="speed">
+        <input type="range" id="speed" min="-3" max="3" step="1" value="0"></br>Speed: <label id="speedLabel"></label>
+      </div>
+      <div  style="text-align: right;">
+        <svg class="icon" id="zoomIn"><use xlink:href="#zoomInIcon"></use></svg>
+        <svg class="icon disabled" id="zoomOut"><use xlink:href="#zoomOutIcon"></use></svg>
+      </div>
+      <div id='alignSelect' class="button-group">
+        <label>
+          <input type="radio" checked="checked" name="align"><img src="images/icons.svg#alignRegular"/>
+        </label>
+        <label>
+          <input type="radio" name="align"><img src="images/icons.svg#alignPolar"/>
+        </label>
+        <label>
+          <input type="radio" name="align"><img src="images/icons.svg#alignDipole"/>
+        </label>
+        <br>Cell alignment
+      </div>
+      <div>
+        <input type="range" id="rotation" min="0" max="360" step="1" value="0"></br>Rotation: <label
+        id="rotationLabel"></label><br>
+      </div>
+      <div id='gridSelect' class="button-group">
+        <label>
+          <input type="radio" checked="checked" name="grid"><img src="images/icons.svg#gridSquare"/>
+        </label>
+        <label>
+          <input type="radio" name="grid" id='gridHex'><img src="images/icons.svg#gridHex"/>
+        </label>
+        <br>Grid type
+      </div>
+    </div>
+  </div>
+
+
+    <!-- <div id="status">
+      
+          Step <span id="stepCount"></span>
+          (<span id="ips"></span> step/s)
+    </div> -->
+
+
+  <div id="pattern-controls">
+    <div class="pattern-selector-title">
+      <span>Textures</span>
+    </div>
+    <div class="dtd-overlay overlaygrad">
+    </div>
+    <div class="dtd-overlay overlayicon">
+    </div>
+    <div id="dtd" class="pattern-selector">
+      <!-- a hacky way to add some padding, so the fadeout doesn't cover items in the scroll. -->
+      <div class="whitespace"></div>
+    </div>
+    <div class="pattern-selector-title" id="inception_selector">
+      <span>Inception</span>
+    </div>
+    <div class="inception-overlay overlaygrad">
+    </div>
+    <div class="inception-overlay overlayicon">
+    </div>
+    <div id="inception" class="pattern-selector">
+      <div class="whitespace"></div>
+    </div>
+    <div id="texhint">
+      <div id="origtex">
+      </div>
+      <span id="texhinttext"></span>
+    </div>
+
+    <div id="colab-hero-div">
+      <a href="https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/texture_nca_tf2.ipynb"
+        class="colab-root" id="colab-hero">Try in a <span class="colab-span"><span class="tf-span">Notebook</span></span></a>
+      <a href="https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/texture_nca_pytorch.ipynb"
+        class="colab-root" id="colab-hero">Try in a <span class="colab-span"><span class="pytorch-span">Notebook</span></span></a>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="twgl.min.js"></script>
+<script src="dat.gui.min.js"></script>
+<script type="module">
+    import { createDemo } from './demo.js'
+    createDemo('demo');
+</script>
+
+</d-title>
+
+<d-byline></d-byline>
+
+
 <d-article>
-{% include contents.html %}
-{% include nextPrev.html %}
+
+<d-contents>
+  <nav class="l-text toc figcaption">
+    <h3>Contents</h3>
+    <div><a href="#patterns-textures-and-physical-processes">Patterns, textures and physical processes</a></div>
+    <ul>
+      <li><a href="#from-turing-to-cellular-automata-to-neural-networks">From Turing, to Cellular Automata, to Neural Networks</a></li>
+      <li><a href="#nca-as-pattern-generators">NCA as pattern generators</a></li> 
+      <li><a href="#related-work">Related work</a></li> 
+    </ul>
+    <div><a href="#feature-visualization">Feature Visualization</a></div>
+    <ul>
+      <li><a href="#nca-with-inceptions">NCA with Inception</a></li>
+    </ul>
+    <div><a href="#other-interesting-findings">Other interesting findings</a></div>
+    <ul>
+      <li><a href="#robustness">Robustness</a></li>
+      <li><a href="#hidden-states">Hidden States</a></li>
+    </ul>
+    <div><a href="#conclusion">Conclusion</a></div>
+  </nav>
+</d-contents>
+<section
+  id="thread-nav"
+  class="thread-info"
+  style="margin-top: 10px; margin-bottom: 40px"
+>
+  <img
+    class="thread-icon"
+    src="images/multiple-pages.svg"
+    width="43px"
+    height="50px"
+  />
+  <p class="explanation">
+    This article is part of the
+    <a href="/2020/selforg/">Differentiable Self-organizing Systems Thread</a>,
+    an experimental format collecting invited short articles delving into
+    differentiable self-organizing systems, interspersed with critical
+    commentary from several experts in adjacent fields.
+  </p>
+  <a class="prev" href="/2020/selforg/mnist/"
+    >Self-classifying MNIST Digits</a
+  >
+</section>
 <p style="color:red;">This is a draft. Please do not share it further. If you want to comment or suggest changes, please ask access to this <a href="https://docs.google.com/document/d/1VX7tb6enGPlGm6VMYsX7uuDIb-L8YSCv3YYYLvdDSY4">Google Document</a>.</p>
 
 <p>Neural Cellular Automata (NCA<d-footnote> We use NCA to refer to both <i>Neural Cellular Automata </i>and <i>Neural Cellular Automaton</i>.</d-footnote>) are capable of learning a diverse set of behaviours: from generating stable, regenerating, static images  <d-cite key="Mordvintsev_Randazzo_Niklasson_Levin_2020"></d-cite>, to segmenting images  <d-cite key="Sandler_Zhmoginov_Luo_Mordvintsev_Randazzo_Arcas_2020"></d-cite>, to learning to "self-classify" shapes <d-cite key="Randazzo_Mordvintsev_Niklasson_Levin_Greydanus_2020"></d-cite>. The inductive bias imposed by using cellular automata is powerful. A system of individual agents running the same learned local rule can solve surprisingly complex tasks. Moreover, individual agents, or cells, can learn to coordinate their behavior even when separated by large distances. By construction, they solve these tasks in a massively parallel and inherently degenerate<d-footnote> Degenerate in this case refers to the <a href='https://en.wikipedia.org/wiki/Degeneracy_(biology)'>biological concept of degeneracy</a>.</d-footnote> way. Each cell must be able to take on the role of any other cell - as a result they tend to generalize well to unseen situations.</p>
@@ -182,7 +1125,7 @@ Sobel_x & Sobel_y & Laplacian
 <figcaption>An NCA trained to excite <b>mixed4a_472</b> in Inception.</figcaption>
 </figure>
 
-<h3 id='nca-with-inception'>NCA with Inception</h3>
+<h3 id='nca-with-inception-'>NCA with Inception </h3>
 <h4 id='model-'>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation, but with a different discriminator network: Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>.</p>
 <h4 id='loss-function-'>Loss function: </h4>
@@ -324,3 +1267,5 @@ eralises to this new rotated paradigm without issue.
     <d-footnote-list></d-footnote-list>
     <d-citation-list></d-citation-list>
 <d-appendix>
+  <d-bibliography src="bibliography.bib"></d-bibliography>
+</body>
