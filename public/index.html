@@ -1,0 +1,1269 @@
+<!doctype html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://distill.pub/template.v2.js"></script>
+  <!-- <script src="/template.v2.js"></script> -->
+  <style>
+  </style>
+  <script src="twgl.min.js"></script>
+  <script type="module" src="./ca.js"></script>
+  <script type="module" src="./demo.js"></script>
+  <!-- TODO: REMOVE -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Growing Neural Cellular Automata">
+  <meta name="twitter:description" content="Training an end-to-end differentiable, self-organising cellular automata model of morphogenesis, able to both grow and regenerate specific patterns.">
+  <meta name="twitter:url" content="https://distill.pub/2020/growing-ca">
+  <meta name="twitter:image" content="https://znah.net/post--selforg-textures/public/thumbnail.jpg">
+  <meta name="twitter:image:width" content="560">
+  <meta name="twitter:image:height" content="295">
+</head>
+
+<body>
+
+  <d-front-matter>
+    <script type="text/json">{
+      "title": "Self-Organising Textures",
+      "description": "Neural Cellular Automata learn to generate textures, exhibiting surprising properties.",
+      "password": "textures",
+      "authors": [
+        {
+          "author": "Eyvind Niklasson",
+          "authorURL": "https://eyvind.me/",
+          "affiliation": "Google",
+          "affiliationURL": "https://ai.google/"
+        },
+        {
+          "author": "Alexander Mordvintsev",
+          "authorURL": "https://znah.net/",
+          "affiliation": "Google",
+          "affiliationURL": "https://ai.google/"
+        },
+        {
+          "author": "Ettore Randazzo",
+          "authorURL": "",
+          "affiliation": "Google",
+          "affiliationURL": "https://ai.google/"
+       },
+       {
+          "author": "Michael Levin",
+          "authorURL": "https://ase.tufts.edu/biology/labs/levin/",
+          "affiliation": "Tufts",
+          "affiliationURL": "https://tufts.edu/"
+	}
+      ],
+      "katex": {
+        "delimiters": [
+          {
+            "left": "$",
+            "right": "$",
+            "display": false
+          },
+          {
+            "left": "$$",
+            "right": "$$",
+            "display": true
+          }
+        ]
+      }
+    }</script>
+
+  </d-front-matter>
+
+  <style>
+   /* ****************************************
+    * Thread Info
+    ******************************************/
+
+    .thread-info {
+      background-color: hsl(54, 78%, 96%);
+      border-left: solid hsl(54, 33%, 67%) 1px;
+      padding: 1em;
+      color: hsla(0, 0%, 0%, 0.67);
+    }
+
+    #thread-nav {
+      margin-top: 20;
+      margin-bottom: 1.5rem;
+      display: grid;
+      grid-template-columns: 45px 2fr 3fr;
+      grid-template-areas:
+        'thread-icon explanation explanation '
+        'thread-icon prev next';
+      grid-column-gap: 1.5em;
+    }
+
+    @media (min-width: 768px) {
+      #thread-nav {
+        grid-template-columns: 65px 3fr 2fr;
+      }
+    }
+
+    #thread-nav .thread-icon {
+      grid-area: thread-icon;
+      padding: 0.5em;
+      justify-self: center;
+    }
+
+    #thread-nav .explanation {
+      grid-area: explanation;
+      font-size: 85%;
+      color: hsl(0, 0%, 0.33);
+    }
+
+    #thread-nav .prev {
+      grid-area: prev;
+    }
+
+    #thread-nav .prev::before {
+      content: '← Previous Article';
+    }
+
+    #thread-nav .overview {
+      scroll-behavior: smooth;
+    }
+
+    #thread-nav .overview::before {
+      content: '↑';
+      white-space: nowrap;
+      margin-right: 0.5em;
+    }
+
+    #thread-nav .next {
+      grid-area: next;
+      scroll-behavior: smooth;
+    }
+
+    #thread-nav .next::before {
+      content: 'Next Article →';
+    }
+
+    #thread-nav .next::before,
+    #thread-nav .prev::before {
+      display: block;
+      white-space: nowrap;
+      padding: 0.5em 0;
+      font-size: 80%;
+      font-weight: bold;
+      margin-top: 0px;
+      margin-right: 0.5em;
+      text-transform: uppercase;
+    }
+
+    #thread-nav .prev,
+    #thread-nav .next,
+    #thread-nav .overview {
+      font-size: 80%;
+      line-height: 1.5em;
+      font-weight: 600;
+      border-bottom: none;
+      color: #2e6db7;
+      /* margin-top: 0.25em; */
+      letter-spacing: 0.25px;
+    }
+
+    figure {
+      text-align: center;
+      margin-bottom: 0.5em;
+      margin-top: 0.5em;
+    }
+    figure img {
+      max-width: 100%;
+      width: unset;
+    }
+    video {
+      max-width: 100%;
+    }
+    .colab-root {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.75);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px!important;
+      text-decoration: none;
+      color: #aaa;
+      border: none;
+      font-weight: 300;
+      border: solid 1px rgba(0, 0, 0, 0.08);
+      border-bottom-color: rgba(0, 0, 0, 0.15);
+      text-transform: uppercase;
+      line-height: 16px;
+    }
+
+   span.colab-span {
+      background-image: url(images/colab.svg);
+      background-repeat: no-repeat;
+      background-size: 20px;
+      background-position-y: 2px;
+      display: inline-block;
+      padding-left: 24px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+
+    span.tf-span {
+      background-image: url(images/tf.svg);
+      background-repeat: no-repeat;
+      background-size: 15px;
+      background-position-y: 0px;
+      display: inline-block;
+      padding-left: 19px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+
+    span.pytorch-span {
+      background-image: url(images/pytorch.svg);
+      background-repeat: no-repeat;
+      background-size: 83px;
+      background-position-x: -32px;
+      background-position-y: -1px;
+      display: inline-block;
+      padding-left: 19px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+
+
+    a.colab-root:hover{
+      color: #666;
+      background: white;
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+
+    /* TOC */
+    @media(max-width: 1000px){
+      d-contents {
+        justify-self: start;
+        align-self: start;
+        grid-column-start: 2;
+        grid-column-end: 6;
+        padding-bottom: 0.5em;
+        margin-bottom: 1em;
+        padding-left: 0.25em;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        border-bottom-width: 1px;
+        border-bottom-style: solid;
+        border-bottom-color: rgba(0, 0, 0, 0.1);
+      }
+    } 
+    
+    @media (min-width: 1000px){
+      d-contents {
+        align-self: start;
+        grid-column-start: 1;
+        grid-column-end: 4;
+        justify-self: end;
+        padding-right: 3em;
+        padding-left: 2em;
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        border-right-width: 1px;
+        border-right-style: solid;
+        border-right-color: rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    @media (min-width: 1180px){
+      d-contents {
+        grid-column-start: 1;
+        grid-column-end: 4;
+        justify-self: end;
+        padding-right: 3em;
+        padding-left: 2em;
+        border-right: 1px solid rgba(0, 0, 0, 0.1);
+        border-right-width: 1px;
+        border-right-style: solid;
+        border-right-color: rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    d-contents nav h3 {
+      margin-top: 0;
+      margin-bottom: 1em;
+    }
+
+    d-contents nav a {
+      color: rgba(0, 0, 0, 0.8);
+      border-bottom: none;
+      text-decoration: none;
+    }
+
+    d-contents li {
+      list-style-type: none;
+    }
+
+    d-contents ul {
+      padding-left: 1em;
+    }
+    
+    d-contents nav ul li {
+      margin-bottom: .25em;
+    }
+
+    d-contents nav a:hover {
+      text-decoration: underline solid rgba(0, 0, 0, 0.6);
+    }
+
+    d-contents nav ul {
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+
+
+    d-contents nav>div {
+      display: block;
+      outline: none;
+      margin-bottom: 0.5em;
+    }
+
+    d-contents nav>div>a {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    d-contents nav>div>a:hover,
+    d-contents nav>ul>li>a:hover {
+        text-decoration: none;
+    }
+
+    /* code blocks to margins */
+    @media (min-width: 1600px) {
+      d-code {
+        margin-top: -10px;
+        grid-column-start: 12;
+        grid-column-end: 14; 
+      }
+    }
+    /* so title is on one line */
+    d-title h1, d-title p {
+      grid-column: middle;
+    }
+
+    /*remove h4 header uppercase (present in distill template)*/
+    d-article h4 {
+      text-transform:none;
+    }
+
+    /* so the headings in the appendix are on one line in narrow screens */
+    @media(max-width: 1000px) {
+      d-appendix h3 {
+        grid-column: text !important; 
+      } 
+    }
+
+  </style>
+  <script>
+  // hack to edit font size in code snippets. guaranteed a better way to do 
+  // this, but I'm not a webdev
+  window.onload = function() {
+    setTimeout(() => { document.querySelectorAll("d-code").forEach(function(e) {e.shadowRoot.querySelector('#code-container').style.fontSize = "0.7em"}); }, 3000);
+  }
+  </script>
+  <script>
+    //Autoplay videos when they're in view
+  </script>
+  <d-title>
+    <h1>Self-Organising Textures</h1>
+    <p>Neural Cellular Automata Model of Pattern Formation</p>
+
+  
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path><path d="M0 0h24v24H0z" fill="none"></path></symbol>
+    <symbol id="pauseIcon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path><path d="M0 0h24v24H0z" fill="none"></path></symbol>
+    <symbol id="resetIcon" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"></path><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></symbol>
+    <symbol id="zoomInIcon" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M12 10h-2v2H9v-2H7V9h2V7h1v2h2v1z"/></symbol>
+    <symbol id="zoomOutIcon" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></symbol>
+    <symbol id="mouse" viewBox="0 0 100 100"><path d="M32,41v18c0,9.9,8.1,18,18,18c9.9,0,18-8.1,18-18V41c0-9.9-8.1-18-18-18C40.1,23,32,31.1,32,41z M50,27c7.7,0,14,6.3,14,14  v18c0,7.7-6.3,14-14,14s-14-6.3-14-14V41C36,33.3,42.3,27,50,27z"></path><path d="M50,44c1.1,0,2-0.9,2-2v-6c0-1.1-0.9-2-2-2s-2,0.9-2,2v6C48,43.1,48.9,44,50,44z"></path><path d="M48.6,92.4C49,92.8,49.5,93,50,93s1-0.2,1.4-0.6l5-5c0.8-0.8,0.8-2,0-2.8s-2-0.8-2.8,0L50,88.2l-3.6-3.6  c-0.8-0.8-2-0.8-2.8,0c-0.8,0.8-0.8,2,0,2.8L48.6,92.4z"></path><path d="M48.6,7.6l-5,5c-0.8,0.8-0.8,2,0,2.8C44,15.8,44.5,16,45,16s1-0.2,1.4-0.6l3.6-3.6l3.6,3.6C54,15.8,54.5,16,55,16  s1-0.2,1.4-0.6c0.8-0.8,0.8-2,0-2.8l-5-5C50.6,6.8,49.4,6.8,48.6,7.6z"></path></symbol>
+</svg>
+
+<style>
+#demo {
+    font-size: 14px;
+    user-select: none;
+    grid-template-columns: auto;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    row-gap: 10px;
+}
+
+.hint a {
+  color: inherit;
+}
+
+@media (min-width: 1180px) {
+  #demo {
+    grid-template-columns: 512px 1fr;
+    grid-template-rows: auto;
+  }
+  #pattern-controls {
+    grid-row: 1;
+  }
+}
+
+#demo-canvas {
+    border: 1px solid lightgrey;
+    image-rendering: pixelated;
+    touch-action: none;
+    width: 100%;
+}
+
+#pattern-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: min-content 0.4fr min-content 0.4fr 0.3fr 0.1fr;
+    /*row-gap: 20px;*/
+    overflow: hidden;
+}
+
+.pattern-selector::-webkit-scrollbar {
+    display: none;
+}
+
+#demo-tip{
+    display: grid;
+    grid-template-columns: 40px auto;
+    align-items: center;
+    column-gap: 10px;
+    margin-bottom: 20px;
+}
+#pointer {
+    width: 40px;
+}
+#status {
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.6);
+    font-family: monospace;
+}
+#model-hints {
+    color: rgba(0, 0, 0, 0.6);
+    grid-column: 1/3;
+}
+#model-hints span {
+    display: none;
+}
+.hint {
+    color: rgba(0, 0, 0, 0.6);
+    line-height: 1.4em;
+    user-select: text;
+}
+
+input[type=range] {
+  -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+  width: 95%; /* Specific width is required for Firefox. */
+  background: transparent; /* Otherwise white in Chrome */
+  margin-bottom: 8px;
+}
+
+.hint a {
+  font-size: 90%;
+}
+
+@media (max-width: 350px) {
+  .hint a {
+    font-size: 75%;
+  }
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+}
+
+input[type=range]:focus {
+  outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  cursor: pointer;
+
+  /* Hides the slider so custom styles can be added */
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+/* Thumb */
+
+/* Special styling for WebKit/Blink */
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  margin-top: -6px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
+
+/* All the same stuff for Firefox */
+input[type=range]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: steelblue;
+  cursor: pointer;
+  border: none;
+}
+
+/* All the same stuff for IE */
+input[type=range]::-ms-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: grey;
+  cursor: pointer;
+}
+
+/* Track */
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 3px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  border: none;
+}
+input[type=range]::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+input[type="radio"] {
+    background-color: steelblue;
+}
+
+#colab-hero-div { 
+  /*grid-column: 1/3;*/
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(0, 0, 0, 0.1);
+  padding-top: 15px;
+  text-align: center;
+}
+
+#colab-hero {
+  margin: auto;
+  /*display: block;*/
+  text-align: center;
+  /*width: 200px;*/
+  height: 16px;
+}
+
+.pattern-selector {
+    grid-column: 1/3;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+    justify-items: center;
+    overflow-x: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-y: contain;
+    padding-top: 5px;
+}
+
+/*.pattern-selector > :last-child {*/
+    /*margin-bottom: 100%;*/
+/*}*/
+
+.pattern-selector-title{
+  grid-column: 1/3;
+  text-align: center;
+  font-weight: bold;
+  /*padding-bottom: 3%;*/
+  /*padding-top: 3px;*/
+}
+
+#inception_selector {
+  padding-top: 3%;
+}
+
+.overlaygrad {
+  z-index: 1;
+  pointer-events: none;
+  height: 100%;
+  background: linear-gradient(to bottom, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 10%, rgba(255,255,255,0.0) 90%, rgb(255,255,255) 100%);
+}
+
+.overlayicon {
+  z-index: 1;
+  pointer-events: none;
+  height: 100%;
+  background: url(images/mouse.svg) rgba(255, 255, 255, 0.4);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 1.0;
+  transition: opacity 1.0s ease-out;
+}
+
+#origtex {
+  margin: auto;
+  margin-top: 10px;
+  height: 128px;
+  width: 128px;
+}
+
+#texhint{
+  height: 170px;
+  grid-column: 1/3;
+  margin-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(0, 0, 0, 0.1);
+  text-align: center;
+  line-height: 2em;
+}
+
+.whitespace {
+  grid-column: 1/-1;
+  height: 5px;
+  width: 1px;
+}
+
+/* PHONES */
+@media (max-width: 500px) {
+  .whitespace {
+    grid-column: auto;
+    height: 1px;
+    width: 1px;
+    /* Also a hack - indends the point at which scroll starts... */
+    margin-right: 55px;
+  }
+  #pattern-controls {
+    grid-template-rows: min-content 64px min-content 64px 0.25fr 0.1fr;
+  }
+  .pattern-selector {
+    grid-template-columns: repeat(100, minmax(64px, 1fr));
+    grid-template-rows: auto;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    padding-top: 0%;
+    padding-left: 2%;
+    overscroll-behavior-y: auto;
+  }
+  .overlaygrad {
+    z-index: 1;
+    pointer-events: none;
+    height: 100%;
+    background: linear-gradient(to right, rgb(255,255,255) 0%, rgba(255,255,255,0.0) 5%, rgba(255,255,255,0.0) 95%, rgb(255,255,255) 100%);
+  }
+
+  .overlayicon {
+    z-index: 1;
+    pointer-events: none;
+    height: 100%;
+    background: url(images/touch.svg) rgba(255, 255, 255, 0.4);
+    background-size: 55px;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 1.0;
+    transition: opacity 1.0s ease-out;
+  }
+
+  .pattern-selector-title {
+    padding-bottom: 0%;
+  }
+  #texhint {
+    height: 135px;
+  }
+  #origtex {
+    height: 96px;
+    width: 96px;
+  }
+}
+
+.pattern-selector * {
+    cursor: pointer;
+}
+
+.texture-square {
+  /*background-image: url('textures/banded.png');*/
+  /*background-position:center;
+  background-repeat:no-repeat;
+  background-size:cover;
+  */
+  /* some weird kludge to allow same width as height */
+  --border-width: 5px;
+  border-style: solid;
+  box-sizing: border-box;
+  border-width: var(--border-width);
+  border-color: white;
+  width: 100%;
+  height: 0;
+  padding-top: calc(100% - 2*var(--border-width));
+  scroll-snap-align: center;
+}
+
+.dtd-overlay, #dtd{
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.inception-overlay, #inception{
+  grid-column: 1;
+  grid-row: 4;
+}
+
+.demo-controls {
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  grid-template-rows: min-content min-content;
+  gap: 0px 5px;
+  text-align: center;
+  line-height: 1.4em;
+
+}
+
+.icon {
+    width: 30px; height: 30px;
+    background: steelblue;
+    fill: white;
+    border-radius: 20px;
+    padding: 5px;
+    margin: 2px;
+    cursor: pointer;
+}
+
+.disabled {
+    background: grey;
+    cursor: default;
+}
+
+/* radio button groups */
+
+.button-group {
+  border-radius: 4px;
+  padding: 4px;
+  background: #eee;
+}
+.button-group input {
+  display: none;
+}
+.button-group img {
+  cursor: pointer;
+  border: 2px solid white;
+}
+.button-group input:checked + img{
+  border: 2px solid goldenrod;
+}
+
+
+</style>
+
+<!-- 
+<view id="alignRegular" viewBox="0 0 480 480"/>
+<view id="alignPolar" viewBox="480 0 480 480"/>
+<view id="alignDipole" viewBox="960 0 480 480"/>
+<view id="gridSquare" viewBox="1440 0 480 480"/>
+<view id="gridHex" viewBox="1920 0 480 480"/>
+<view id="rotation" viewBox="2400 0 480 480"/>
+-->
+
+<div class="l-body-outset grid" id="demo">
+
+  <div>
+    <canvas id="demo-canvas"></canvas>
+
+    <div class="demo-controls">
+      <div class="play-reset" style="text-align: left;">
+        <span id="play-pause">
+          <svg class="icon" id="play"><use xlink:href="#playIcon"></use></svg>
+          <svg class="icon" id="pause" style="display: none;"><use xlink:href="#pauseIcon"></use></svg>
+        </span>
+        <svg class="icon" id="reset"><use xlink:href="#resetIcon"></use></svg>
+      </div>
+      <div class="speed">
+        <input type="range" id="speed" min="-3" max="3" step="1" value="0"></br>Speed: <label id="speedLabel"></label>
+      </div>
+      <div  style="text-align: right;">
+        <svg class="icon" id="zoomIn"><use xlink:href="#zoomInIcon"></use></svg>
+        <svg class="icon disabled" id="zoomOut"><use xlink:href="#zoomOutIcon"></use></svg>
+      </div>
+      <div id='alignSelect' class="button-group">
+        <label>
+          <input type="radio" checked="checked" name="align"><img src="images/icons.svg#alignRegular"/>
+        </label>
+        <label>
+          <input type="radio" name="align"><img src="images/icons.svg#alignPolar"/>
+        </label>
+        <label>
+          <input type="radio" name="align"><img src="images/icons.svg#alignDipole"/>
+        </label>
+        <br>Cell alignment
+      </div>
+      <div>
+        <input type="range" id="rotation" min="0" max="360" step="1" value="0"></br>Rotation: <label
+        id="rotationLabel"></label><br>
+      </div>
+      <div id='gridSelect' class="button-group">
+        <label>
+          <input type="radio" checked="checked" name="grid"><img src="images/icons.svg#gridSquare"/>
+        </label>
+        <label>
+          <input type="radio" name="grid" id='gridHex'><img src="images/icons.svg#gridHex"/>
+        </label>
+        <br>Grid type
+      </div>
+    </div>
+  </div>
+
+
+    <!-- <div id="status">
+      
+          Step <span id="stepCount"></span>
+          (<span id="ips"></span> step/s)
+    </div> -->
+
+
+  <div id="pattern-controls">
+    <div class="pattern-selector-title">
+      <span>Textures</span>
+    </div>
+    <div class="dtd-overlay overlaygrad">
+    </div>
+    <div class="dtd-overlay overlayicon">
+    </div>
+    <div id="dtd" class="pattern-selector">
+      <!-- a hacky way to add some padding, so the fadeout doesn't cover items in the scroll. -->
+      <div class="whitespace"></div>
+    </div>
+    <div class="pattern-selector-title" id="inception_selector">
+      <span>Inception</span>
+    </div>
+    <div class="inception-overlay overlaygrad">
+    </div>
+    <div class="inception-overlay overlayicon">
+    </div>
+    <div id="inception" class="pattern-selector">
+      <div class="whitespace"></div>
+    </div>
+    <div id="texhint">
+      <div id="origtex">
+      </div>
+      <span id="texhinttext"></span>
+    </div>
+
+    <div id="colab-hero-div">
+      <a href="https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/texture_nca_tf2.ipynb"
+        class="colab-root" id="colab-hero">Try in a <span class="colab-span"><span class="tf-span">Notebook</span></span></a>
+      <a href="https://colab.research.google.com/github/google-research/self-organising-systems/blob/master/notebooks/texture_nca_pytorch.ipynb"
+        class="colab-root" id="colab-hero">Try in a <span class="colab-span"><span class="pytorch-span">Notebook</span></span></a>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="twgl.min.js"></script>
+<script src="dat.gui.min.js"></script>
+<script type="module">
+    import { createDemo } from './demo.js'
+    createDemo('demo');
+</script>
+
+</d-title>
+
+<d-byline></d-byline>
+
+
+<d-article>
+
+<d-contents>
+  <nav class="l-text toc figcaption">
+    <h3>Contents</h3>
+    <div><a href="#patterns-textures-and-physical-processes">Patterns, textures and physical processes</a></div>
+    <ul>
+      <li><a href="#turing-to-cellular-automata-to-neural-networks">Turing, to Cellular Automata, to Neural Networks</a></li>
+      <li><a href="#ncas-as-pattern-generators">NCAs as pattern generators</a></li> 
+      <li><a href="#related-work">Related Work</a></li> 
+    </ul>
+    <div><a href="#feature-visualization">Feature Visualization</a></div>
+    <div><a href="#discussion">Discussion</a></div>
+    <ul>
+      <li><a href="#interesting-behaviours-of-inception-solitons">Interesting behaviours of inception solitons</a></li>
+      <li><a href="#robustness">Robustness</a></li>
+      <li><a href="#hidden-states">Hidden States</a></li>
+    </ul>
+    <div><a href="#conclusion">Conclusion</a></div>
+  </nav>
+</d-contents>
+<section
+  id="thread-nav"
+  class="thread-info"
+  style="margin-top: 10px; margin-bottom: 40px"
+>
+  <img
+    class="thread-icon"
+    src="images/multiple-pages.svg"
+    width="43px"
+    height="50px"
+  />
+  <p class="explanation">
+    This article is part of the
+    <a href="/2020/selforg/">Differentiable Self-organizing Systems Thread</a>,
+    an experimental format collecting invited short articles delving into
+    differentiable self-organizing systems, interspersed with critical
+    commentary from several experts in adjacent fields.
+  </p>
+  <a class="prev" href="/2020/selforg/mnist/"
+    >Self-classifying MNIST Digits</a
+  >
+</section>
+<p style="color:red;">This is a draft. Please do not share it further. If you want to comment or suggest changes, please ask access to this <a href="https://docs.google.com/document/d/1VX7tb6enGPlGm6VMYsX7uuDIb-L8YSCv3YYYLvdDSY4">Google Document</a>.</p>
+
+<p>Neural Cellular Automata (NCA<d-footnote> We use NCA to refer to both <i>Neural Cellular Automata </i>and <i>Neural Cellular Automaton</i>.</d-footnote>) are capable of learning a diverse set of behaviours: from generating stable, regenerating, static images  <d-cite key="Mordvintsev_Randazzo_Niklasson_Levin_2020"></d-cite>, to segmenting images  <d-cite key="Sandler_Zhmoginov_Luo_Mordvintsev_Randazzo_Arcas_2020"></d-cite>, to learning to "self-classify" shapes <d-cite key="Randazzo_Mordvintsev_Niklasson_Levin_Greydanus_2020"></d-cite>. The inductive bias imposed by using cellular automata is powerful. A system of individual agents running the same learned local rule can solve surprisingly complex tasks. Moreover, individual agents, or cells, can learn to coordinate their behavior even when separated by large distances. By construction, they solve these tasks in a massively parallel and inherently degenerate<d-footnote> Degenerate in this case refers to the <a href='https://en.wikipedia.org/wiki/Degeneracy_(biology)'>biological concept of degeneracy</a>.</d-footnote> way. Each cell must be able to take on the role of any other cell - as a result they tend to generalize well to unseen situations.</p>
+
+<p>In this work, we apply NCA to the task of texture synthesis. This task involves reproducing the general appearance of a texture template, as opposed to making pixel-perfect copies. In this article we are going to focus on texture losses that allow for a degree of ambiguity. After training NCA models to reproduce textures, we subsequently investigate their learned behaviors and observe a few surprising effects. Starting from these investigations, we make the case that the cells learn distributed, local, algorithms. </p>
+
+<p>To do this, we apply an old trick: we employ neural cellular automata as a differentiable image parameterization <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>.</p>
+
+<h2 id='patterns-textures-and-physical-processes'>Patterns, textures and physical processes</h2>
+<p></p>
+<figure>
+<img src='images/zebra.jpg' style='width: 350px'>
+<figcaption>A pair of Zebra. Zebra are said to have unique stripes.</figcaption>
+</figure>
+
+<p>Zebra stripes are an iconic texture. Ask almost anyone to identify zebra stripes in a set of images, and they will have no trouble doing so. Ask them to describe what zebra stripes look like, and they will gladly tell you that they are parallel stripes of slightly varying width, alternating in black and white. And yet, they may also tell you that no two zebra have the same set of stripes<d-footnote> Perhaps an apocryphal claim, but at the very lowest level every zebra will be unique. Ourp point is - "zebra stripes" as a concept in human understanding refers to the general structure of a black and white striped pattern and not to a specific mapping from location to colour.</d-footnote>. This is because evolution has programmed the cells responsible for creating the zebra pattern to generate a pattern of a certain quality, with certain characteristics, as opposed to programming them with the blueprints for an exact bitmap of the edges and locations of stripes to be moulded to the surface of the zebra's body.</p>
+
+<p>Put another way, patterns and textures are ill-defined concepts. The Cambridge English Dictionary defines a pattern as &quot;any regularly repeated arrangement, especially a design made from repeated lines, shapes, or colours on a surface&quot;. This definition falls apart rather quickly when looking at patterns and textures that impart a feeling or quality, rather than a specific repeating property. A coloured fuzzy rug, for instance, can be considered a pattern or a texture, but is composed of strands pointing in random directions with small random variations in size and color, and there is no discernable regularity to the pattern. Penrose tilings do not repeat (they are not translationally invariant), but show them to anyone and they&#39;ll describe them as a pattern or a texture. Most patterns in nature are outputs of locally interacting processes that may or may not be stochastic in nature, but are often based on fairly simple rules. There is a large body of work on models which give rise to such patterns in nature; most of it is inspired by Turing&#39;s seminal paper on morphogenesis. <d-cite key="Turing_1952"></d-cite> </p>
+
+<p>Such patterns are very common in developmental biology <d-cite key="Marcon_Sharpe_2012"></d-cite>. In addition to coat colors and skin pigmentation, invariant large-scale patterns, arising in spite of stochastic low-level dynamics, are a key feature of peripheral nerve networks, vascular networks, somites (blocks of tissue demarcated in embryogenesis that give rise to many organs), and segments of anatomical and genetic-level features, including whole body plans (e.g., snakes and centipedes) and appendages (such as demarcation of digit fields within the vertebrate limb<d-cite key="Schaerli_Munteanu_Gili_Cotterell_Sharpe_Isalan_2014"></d-cite><d-cite key="Hiscock_Tschopp_Tabin_2017"></d-cite><d-cite key="Raspopovic_Marcon_Russo_Sharpe_2014"></d-cite>). These kinds of patterns are generated by reaction-diffusion processes, bioelectric signaling, planar polarity, and other cell-to-cell communication mechanisms<d-cite key="Landge_Jordan_Diego_Müller_2020"></d-cite><d-cite key="Pietak_Levin_2017"></d-cite><d-cite key="Brodsky"></d-cite><d-cite key="Goldbeter_2018"></d-cite>. Patterns in biology are not only structural, but also physiological, as in the waves of electrical activity in the brain and the dynamics of gene regulatory networks.  These gene regulatory networks, for example, can support computation sufficiently sophisticated as to be subject to Liar paradoxes<d-footnote> See <a href='https://en.wikipedia.org/wiki/Liar_paradox'>liar paradox</a>. In principle, gene regulatory networks can express paradoxical behaviour, such as that expression of factor A represses the expression of factor A. <d-cite key="Isalan_2009"></d-cite> One result of such a paradox can be that a certain factor will oscillate with time. </d-footnote>. Studying the emergence and control of such patterns can help us to understand not only their evolutionary origins, but also how they are recognized (either in the visual system of a second observer or in adjacent cells during regeneration) and how they can be modulated for the purposes of regenerative medicine.</p>
+
+<p>As a result, when having any model learn to produce textures or patterns, we want it to learn a generative process for the pattern. We can think of such a process as a means of sampling from the distribution governing this pattern. The first hurdle is to choose an appropriate loss function, or qualitative measure of the pattern. To do so, we employ ideas from Gatys et. al <d-cite key="Gatys_Ecker_Bethge_2015"></d-cite>. NCA become the parametrization for an image which we &quot;stylize&quot; in the style of the target pattern. In this case, instead of restyling an existing image, we begin with a fully unconstrained setting: the output of an untrained, randomly initialized, NCA. The NCA serve as the "renderer" or &quot;generator&quot;, and a pre-trained differentiable model serves as a distinguisher of the patterns, providing the gradient necessary for the renderer to learn to produce a pattern of a certain style.</p>
+<h3 id='from-turing-to-cellular-automata-to-neural-networks'>From Turing, to Cellular Automata, to Neural Networks</h3>
+<p>NCA are well suited for generating textures. To understand why, we&#39;ll demonstrate parallels between texture generation in nature and NCA. Given these parallels, we argue that NCA are a good model class for texture generation.</p>
+
+<h4 id='pdes'>PDEs</h4>
+<p>In &quot;The Chemical Basis of Morphogenesis&quot; <d-cite key="Turing_1990"></d-cite>, Alan Turing suggested that simple physical processes of reaction and diffusion, modelled by partial differential equations, lie behind pattern formation in nature, such as the aforementioned Zebra stripes. Extensive work has since been done to identify PDEs modeling reaction-diffusion and evaluating their behaviour. One of the more celebrated examples is the Gray-Scott model of reaction diffusion (<d-cite key="Lee_McCormick_Ouyang_Swinney_1993"></d-cite>,<d-cite key="Pearson_1993"></d-cite>). This process has a veritable zoo of interesting behaviour, explorable by simply tuning the two parameters. We strongly encourage readers to visit this <a href='http://mrob.com/pub/comp/xmorphia/'>interactive atlas</a> of the different regions of the Gray-Scott reaction diffusion model to get a sense for the extreme variety of behaviour hidden behind two simple knobs. The more adventurous can even <a href='https://groups.csail.mit.edu/mac/projects/amorphous/jsim/sim/GrayScott.html'>play with a simulation locally</a> or <a href='https://mrob.com/pub/comp/xmorphia/ogl/index.html'>in the browser</a>.</p>
+
+<p>To tackle the problem of reproducing our textures, we propose a more general version of the above systems, described by a simple Partial Differential Equation (PDE) over the state space of an image. </p>
+
+<figure>
+$\frac{\partial \mathbf{s} }{\partial  t } = f(\textbf{s}, \nabla_\mathbf{x} \textbf{s}, \nabla_\mathbf{x}^{2}\textbf{s})$
+</figure>
+
+<p>Here, $f$ a function that depends on the gradient ($\nabla_\mathbf{x} \textbf{s}$) and Laplacian  ($\nabla_\mathbf{x}^{2}\textbf{s}$) of the state space and determines the time evolution of this state space. $s$ represents a k dimensional vector, whose first three components correspond to the visible RGB color channels. </p>
+
+<p>Intuitively, we have defined a system where every point of the image changes with time, in a way that depends on how the image currently changes across space, with respect to its immediate neighbourhood. Readers may start to recognize the resemblance between this and another system based on immediately local interactions.</p>
+<h4 id='to-cas'>To CAs</h4>
+
+<p>Differential equations governing natural phenomena are usually evaluated using numerical differential equation solvers. Indeed, this is sometimes the <strong>only</strong> way to solve them, as many PDEs and ODEs of interest do not have closed form solutions. This is even the case for some deceptively simple ones, such as the <a href='https://en.wikipedia.org/wiki/Three-body_problem'>three-body problem</a>. Numerically solving PDEs and ODEs is a vast and well-established field. One of the biggest hammers in the metaphorical toolkit for numerically evaluating differential equations is discretization: the process of converting the variables of the system from continuous space to a discrete space, where numerical integration is tractable. When using some ODEs to model a change in a phenomena over time, for example, it makes sense to advance through time in discrete steps, possibly of variable size. </p>
+
+<p>We now show that numerically integrating the aforementioned PDE is equivalent to reframing the problem as a Neural Cellular Automata, with $f$ assuming the role of the NCA rule. </p>
+
+<p>The logical approach to discretize the space the PDE operates on is to discretize the continuous 2D image space into a 2D raster grid. Boundary conditions are of concern but we can address them by moving to a toroidal world where each dimension wraps around on itself. </p>
+
+<p>Similarly to space, we choose to treat time in a discretized fashion and evaluate our NCA at fixed-sized time steps. This is equivalent to the explicit Euler integration. However, here we make an important deviation from traditional PDE numerical integration methods for two reasons. First, if all cells are updated synchronously, initial conditions $s_0$ must vary from cell-to-cell in order to break the symmetry. Second, the physical implementation of the synchronous model would require the existence of a global clock, shared by all cells. One way to work around the former is by initializing the grid with random noise, but in the spirit of self organisation we instead choose to decouple the cell updates by asynchronously evaluating the CA. We sample a subset of all cells at each time-step to update. This introduces both asynchronicity in time (cells will sometimes operate on information from their neighbours that is several timesteps old), and asymmetry in space, solving both aforementioned issues.</p>
+
+<p>Our next step towards representing a PDE with cellular automata is to discretize the gradient and Laplacian operators. For this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete Laplace operator, as below.</p>
+
+<figure>
+$ \begin{array}{ c c c }
+\begin{bmatrix}
+-1 & 0 & 1\\-2 & 0 & 2 \\-1 & 0 & 1
+\end{bmatrix}
+&
+\begin{bmatrix}
+-1 & -2 & -1\\ 0 & 0 & 0 \\1 & 2 & 1
+\end{bmatrix}
+&
+\begin{bmatrix}
+1 & 2 & 1\\2 & -12 & 2 \\1 & 2 & 1
+\end{bmatrix}
+\\
+Sobel_x & Sobel_y & Laplacian
+\end{array}$
+</figure>
+
+<p>With all the pieces in place, we now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that as our grid becomes very fine, and the asynchronous updates approach uniformity, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE as we defined it.</p>
+<h4 id='to-neural-networks'>To Neural Networks</h4>
+<p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks. We provide both a Tensorflow and a minimal PyTorch implementation for reference, and refer to these for details on our implementation.  </p>
+<h3 id='nca-as-pattern-generators'>NCA as pattern generators</h3>
+<h4 id='model'>Model:</h4>
+<p></p>
+<figure style='margin-left: auto; margin-right: auto; grid-column: page; width: 100%; max-width: 800px' >
+<img src='images/texture_model.svg' style='width: 100%'>
+<figcaption>Texture NCA model.</figcaption>
+</figure>
+
+
+<p>We build on the Growing CA NCA model <d-cite key="Mordvintsev_Randazzo_Niklasson_Levin_2020"></d-cite>, complete with built-in quantization of weights, stochastic updates, and the batch pool mechanism to approximate long-term training. For further details on the model and motivation, we refer readers to this work.</p>
+<h4 id='loss-function-'>Loss function: </h4>
+<p>	</p>
+
+<figure style='margin-left: auto; margin-right: auto; grid-column: page; width: 100%; max-width: 800px' >
+<img src='images/texture_training.svg' style='width: 100%'>
+<figcaption>Texture NCA model.</figcaption>
+</figure>
+
+<p>We use a well known deep convolutional network for image recognition, VGG (Visual Geometry Group Net <d-cite key="Simonyan_Zisserman_2014"></d-cite>) as our differentiable discriminator of textures, for the same reasons outlined in Differentiable Parametrizations <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>. We start with a template image, $\vec{x}$, which we feed into VGG. Then we collect statistics from certain layers (block[$1...5$]_conv1) in the form of the raw activation values of the neurons in these layers. Finally, we run our NCA forward for between 32 and 64 iterations, feeding the resulting RGB image into VGG. Our loss is the $L_2$ distance between the gram matrix<d-footnote> For a brief definition of gram matrices, see <a href='https://www.tensorflow.org/tutorials/generative/style_transfer#calculate_style'>here</a>.</d-footnote> of activations of these neurons with the NCA as input and their activations with the template image as input. We keep the weights of VGG frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
+<h4 id='dataset-'>Dataset: </h4>
+<p>The template images for this dataset are from the Oxford Describable Textures Dataset <d-cite key="Cimpoi_Maji_Kokkinos_Mohamed_Vedaldi_2013"></d-cite>.  The aim of this dataset is to provide a benchmark for measuring the ability of vision models to recognize and categorize textures and describe textures using words. The textures were collected to match 47 &quot;attributes&quot; such as &quot;bumpy&quot; or &quot;polka-dotted&quot;. These 47 attributes were in turn distilled from a set of common words used to describe textures identified by Bhusan, Rao and Lohse <d-cite key="Bhushan_Rao_Lohse_1997"></d-cite>. </p>
+<h4 id='results'>Results:</h4>
+<p>After a few iterations of training, we see the NCA converge to a solution that at first glance looks similar to the input template, but not pixel-wise identical. The very first thing to notice is that the solution learned by the NCA is <strong>not</strong> time-invariant if we continue to iterate the CA. In other words it is constantly changing! </p>
+
+<p>This is not completely unexpected. In <i>Differentiable Parametrizations</i>, the authors noted that the images produced when backpropagating into image space would end up different each time the algorithm was run due to the stochastic nature of the parametrizations. To work around this, they introduced some tricks to maintain <strong>alignment</strong> between different visualizations. In our model, we find that we attain such alignment along the temporal dimension without optimizing for it; a welcome surprise. We believe the reason is threefold. First, reaching and maintaining a static state in an NCA appears to be non-trivial in comparison to a dynamic one, so much so that in Growing CA a pool of NCA states at various iteration times had to be maintained and sampled as starting states to simulate loss being applied after a time period longer than the NCAs iteration period, to achieve a static stability. We employ the same sampling mechanism here to prevent the pattern from decaying, but in this case the loss doesn&#39;t enforce a static fixed target; rather it guides the NCA towards any one of a number of states that minimizes the style loss. Second, we apply our loss after a random number of iterations of the NCA. This means that, at any given time step, the pattern must be in a state that minimizes the loss. Thirdly, the stochastic updates, local communication, and quantization all limit and regularize the magnitude of updates at each iteration. This encourages small changes between one iteration and the next. We hypothesize that these properties combined encourage the NCA to find a solution where each iteration is <strong>aligned</strong> with the previous iteration. We perceive this alignment through time as motion, and as we iterate the NCA we observe it traversing a manifold of locally aligned solutions. </p>
+
+<p>We now <strong>posit</strong> <i>that finding temporally aligned solutions is equivalent to finding an algorithm, or process, that generates the template pattern</i>, based on the aforementioned findings and qualitative observation of the NCA. We proceed to demonstrate some exciting behaviours of NCA trained on different template images.  </p>
+
+<p></p>
+<figure>
+<video src='videos/grid.mp4' autoplay loop muted controls style='width: 325px'></video>
+<figcaption>An NCA trained to create a pattern in the style of <b>chequered_0121.jpg</b>.</figcaption>
+</figure>
+
+<p>Here, we see that the NCA is trained using a template image of a simple black and white grid. </p>
+<p>We notice that: </p>
+
+<ul><li>Initially, a non-aligned grid of black and white quadrilaterals is formed. </li>
+<li>As time progresses, the quadrilaterals seemingly grow or shrink in both $\vec{x}$ and $\vec{y}$ to more closely approximate squares. Quadrilaterals of both colours either emerge or disappear. Both of these behaviours seem to be an attempt to find local consistency. </li>
+<li>After a longer time, the grid tends to achieve perfect consistency.</li></ul>
+
+<p>Such behaviour is not entirely unlike what one would expect in a hand-engineered algorithm to produce a consistent grid with local communication. For instance, one potential hand-engineered approach would be to have cells first try and achieve local consistency, by choosing the most common colour from the cells surrounding them, then attempting to form a diamond of correct size by measuring distance to the four edges of this patch of consistent colour, and moving this boundary if it were incorrect. Distance could be measured by using a hidden channel to encode a gradient in each direction of interest, with each cell decreasing the magnitude of this channel as compared to its neighbour in that direction. A cell could then localize itself within a diamond by measuring the value of two such gradient channels. The appearance of such an algorithm would bear resemblance to the above - with patches of cells becoming either black, or white, diamonds, then resizing themselves to achieve consistency.</p>
+
+<p></p>
+<figure>
+<!--<img src='images/bubbly_0101.jpg' style='width: 325px'></img>-->
+<video src='videos/bubbles.mp4' autoplay loop muted controls style='width: 325px'></video>
+<figcaption>An NCA trained to create a pattern in the style of <b>bubbly_0101.jpg</b>.</figcaption>
+</figure>
+
+<p>In this video, the NCA has learned to reproduce a texture based on a template of clear bubbles on a blue background. One of the most interesting behaviours we observe is that the density of the bubbles remains fairly constant. If we re-initialize the grid states, or interactively destroy states, we see a multitude of bubbles re-forming. However, as soon as two bubbles get too close to each other, one of them spontaneously collapses and disappears, ensuring a constant density of bubbles throughout the entire image. We regard these bubbles as &quot;<a href='#an-aside-solitons-and-lenia'>solitons</a>&quot; in the solution space of our NCA. This is a concept we will discuss and investigate at length below.</p>
+
+<p>If we speed the animation up, we see that different bubbles move at different speeds, yet they never collide or touch each other. Bubbles also maintain their structure by self-correcting; a damaged bubble can re-grow.</p>
+
+<p>This behaviour is remarkable because it arises spontaneously, without any external or auxiliary losses. All of these properties are learned from a combination of the template image, the information stored in the layers of VGG, and the inductive bias of the NCA. The NCA learned a rule that effectively approximates many of the properties of the bubbles in the original image. Moreover, it has learned a process that generates this pattern in a way that is robust to damage and looks realistic to humans. </p>
+
+<p></p>
+<figure>
+<!--<img src='images/interlaced_0172.jpg' style='width: 325px'></img>-->
+<video src='videos/viking.mp4'' autoplay loop muted controls style='width: 325px'></video>
+<figcaption>An NCA trained to create a pattern in the style of <b>interlaced_0172.jpg</b>.</figcaption>
+</figure>
+
+<p>Here we see one of our favourite patterns: a simple geometric &quot;weave&quot;. Again, we notice the NCA seems to have learned an algorithm for producing this pattern. Each &quot;thread&quot; alternately joins or detaches from other threads in order to produce the final pattern. This is strikingly similar to what one would attempt to implement, were one asked to programmatically generate the above pattern. One would try to design some sort of stochastic algorithm for weaving individual threads together with other nearby threads.</p>
+
+
+
+<figure>
+<!--<img src='images/banded_0037.jpg' style='width: 325px'></img>-->
+<video src='videos/lines.mp4' autoplay loop muted controls style='width: 325px'></video>
+<figcaption>An NCA trained to create a pattern in the style of <b>banded_0037.jpg</b>.</figcaption>
+</figure>
+
+<p>The misalignments stripe fragments travel up or down the stripe until either they merge to form a single straight stripe or a stripe shrinks and disappears. Were this to be implemented algorithmically with local communication, it is not infeasible that a similar algorithm for finding consistency among the stripes would be used.</p>
+<h3 id='related-work'>Related work</h3>
+<p>This foray into pattern generation is by no means the first. There has been extensive work predating deep-learning, in particular suggesting deep connections between spatial patterning of anatomical structure and temporal patterning of cognitive and computational processes (e.g., reviewed in <d-cite key="Pezzulo_Levin_2015"></d-cite>). Hans Spemann, one of the heroes of classical developmental biology, said "Again and again terms have been used which point not to physical but to psychical analogies. It was meant to be more than a poetical metaphor. It was meant to my conviction that the suitable reaction of a germ fragment, endowed with diverse potencies, in an embryonic &#39;field&#39;... is not a common chemical reaction, like all vital processes, are comparable, to nothing we know in such degree as to vital processes of which we have the most intimate knowledge." <d-cite key="Speman_1938"></d-cite>.  More recently, Grossberg quantitatively laid out important similarities between developmental patterning and computational neuroscience <d-cite key="Grossberg_1978"></d-cite>. As briefly touched upon, the inspiration for much of the work came from Turing&#39;s work on pattern generation through local interaction, and later papers based on this principle. However, we also wish to acknowledge some works that we feel have a particular kinship with ours. </p>
+<h4 id='patch-sampling'>Patch sampling</h4>
+<p>Early work in pattern generation focused on texture sampling. Patches were often sampled from the original image and reconstructed or rejoined in different ways to obtain an approximation of the texture. This method has also seen recent success with the work of Gumin <d-cite key="Gumin"></d-cite>.</p>
+<h4 id='deep-learning'>Deep learning</h4>
+<p>Gatys et. al&#39;s work <d-cite key="Gatys_Ecker_Bethge_2015"></d-cite>, referenced throughout, has been seminal with regards to the idea that statistics of certain layers in a pre-trained network can capture textures or styles in an image. There has been extensive work building on this idea, including playing with other parametrisations for image generation <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite> and optimizing the generation process <d-cite key="Ulyanov_Lebedev_Vedaldi_Lempitsky_2016"></d-cite>. </p>
+
+<p>Other work has focused on using a convolutional generator combined with path sampling and trained using an adversarial loss to produce textures of similar quality <d-cite key="Xian_Sangkloy_Agrawal_Raj_Lu_Fang_Yu_Hays_2018"></d-cite>. </p>
+<h4 id='interactive-evolution-of-camouflage'>Interactive Evolution of Camouflage</h4>
+<p>Perhaps the most unconventional approach, with which we find kinship, is laid out in Interactive Evolution of Camouflage <d-cite key="Reynolds_2011"></d-cite>. Craig Reynolds uses a texture description language, consisting of generators and operators, to parametrize a texture patch, which is presented to human viewers who have to decide which patches are the worst at &quot;camouflaging&quot; themselves against a chosen background texture. The population is updated in an evolutionary fashion to maximize &quot;camouflage&quot;, resulting in a texture exhibiting the most camouflage (to human eyes) after a number of iterations. We see strong parallels with our work - instead of a texture generation language, we have an NCA parametrize the texture, and instead of human reviewers we use VGG as an evaluator of the quality of a generated pattern. We believe a fundamental difference lies in the solution space of an NCA. A texture generation language comes with a number of inductive biases and learns a deterministic mapping from coordinates to colours. Our method appears to learn more general algorithms and behaviours giving rise to the target pattern.</p>
+
+<p>Two other noteworthy examples of similar work are Portilla et. al&#39;s work with the wavelet transform <d-cite key="Portilla_Simoncelli_2000"></d-cite>, and work by Chen et al with reaction diffusion <d-cite key="Chen_Pock_2017"></d-cite>.</p>
+<h2 id='feature-visualization'>Feature visualization</h2>
+
+<p></p>
+<figure>
+<img src='images/butterfly_eye.jpg' style='width: 350px'></img>
+<figcaption>A butterfly with an "eye-spot" on the wings.</figcaption>
+</figure>
+
+<p>We have now explored some of the fascinating behaviours learned by the NCA when presented with a template image. What if we want to see them learn even more &quot;unconstrained&quot; behaviour? </p>
+
+<p>Some butterflies have remarkably lifelike eyes on their wings. It&#39;s unlikely the butterflies are even aware of this incredible artwork on their own bodies. Evolution placed these there to trigger a response of fear in potential predators or to deflect attacks from them <d-cite key="Kodandaramaiah_2011"></d-cite>. It is likely that neither the predator nor the butterfly has a concept for what an eye is or what an eye does, or even less so any <a href='https://en.wikipedia.org/wiki/Theory_of_mind'>theory of mind</a> regarding the consciousness of the other, but evolution has identified a region of morphospace for this organism that exploits pattern-identifying features of predators to trick them into fearing a harmless bug instead of consuming it. </p>
+
+<p>Even more remarkable is the fact that the individual cells composing the butterfly's wings can self assemble into coherent, beautiful, shapes far larger than an individual cell - indeed a cell is on the order of $1^{-5}m$ <d-cite key="Ohno_Otaki_2015"></d-cite> while the features on the wings will grow to as large as $1^{-3}m$ <d-cite key="Iwata_Otaki_2016"></d-cite>. The coordination required to produce these features implies  self-organization over hundreds or thousands of cells to generate a coherent image of an eye that evolved simply to act as a visual stimuli for an entirely different species, because of the local nature of cell-to-cell communication. Of course, this pales in comparison to the morphogenesis that occurs in animal and plant bodies, where structures consisting of millions of cells will specialize and coordinate to generate the target morphology. </p>
+
+<p>A common approach to investigating neural networks is to look at what inhibits or excites individual neurons in a network <d-cite key="Schubert_Petrov_Carter_Cammarata_Goh_Olah_2020"></d-cite>. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is a large contemporary body of work on doing the same with neural networks. For instance the work by Boettiger <d-cite key="Boettiger_Ermentrout_Oster_2009"></d-cite> <d-cite key="Boettiger_Oster_2009"></d-cite>.</p>
+
+<p>We can explore this idea with minimal effort by taking our pattern-generating NCA and exploring what happens if we task it to enter a state that excites a given neuron in Inception. One of the common resulting NCAs we notice is eye and eye-related shapes - such as the video below - likely as a result of having to detect various animals in ImageNet. In the same way that cells form eye patterns on the wings of butterflies to excite neurons in the brains of predators, our NCA&#39;s population of cells has learned to collaborate to produce a pattern that excites certain neurons in an external neural network.</p>
+
+<p></p>
+<figure>
+<!--<img src='images/mixed4a_472_microscope.png' style='width: 325px'></img>-->
+<video src='videos/eyes.mp4' autoplay loop muted controls style='width: 325px'></video>
+<figcaption>An NCA trained to excite <b>mixed4a_472</b> in Inception.</figcaption>
+</figure>
+
+<h3 id='nca-with-inception-'>NCA with Inception </h3>
+<h4 id='model-'>Model: </h4>
+<p>We use a model identical to the one used for exploring pattern generation, but with a different discriminator network: Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>.</p>
+<h4 id='loss-function-'>Loss function: </h4>
+<p>Our loss maximizes the activations of chosen neurons, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of the Inception frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
+<h4 id='dataset-'>Dataset: </h4>
+<p>There is no explicit dataset for this task. Inception is trained on ImageNet. The layers and neurons we chose to excite are chosen qualitatively using OpenAI Microscope.</p>
+<h4 id='results'>Results:</h4>
+<p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions. In other words, resulting NCAs do not stay still. We also observe that the majority of the NCAs learn to produce solitons of various kinds. We discuss a few below, but encourage readers to explore them in the demo. </p>
+
+<p></p>
+<figure>
+<!--<img src='images/mixed4c_439_microscope.png' style='width: 325px'></img>-->
+<video src='videos/eyes.mov' autoplay loop muted controls style='width: 325px'></video>
+<figcaption>An NCA trained to excite <b>mixed4c_439</b> in Inception.</figcaption>
+</figure>
+<p>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may cause one or both of them to decay. We also observe that solitons can divide into two new solitons.</p>
+<p></p>
+<figure>
+<!--<img src='images/mixed3b_454_microscope.png' style='width: 325px'></img>-->
+<video src='videos/moving_thread.mov' autoplay loop muted controls style='width: 325px'></video>
+<figcaption>An NCA trained to excite <b>mixed3b_454</b> in Inception.</figcaption>
+</figure>
+<p>In textures that are composed of threads or lines, or in certain excitations of Inception neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
+
+<h2 id='other-interesting-findings'>Other interesting findings</h2>
+<h3 id='robustness'>Robustness</h3>
+<h4 id='switching-manifolds'>Switching manifolds</h4>
+
+<p>We encode local information flow within the NCA using the same fixed Laplacian and gradient filters. As luck would have it, these can be defined for most underlying manifolds, giving us a way of placing our cells on various surfaces and in various configurations without having to modify the learned model. Suppose we want our cells to live in a hexagonal world. We can redefine our kernels as follows:</p>
+<p></p>
+<figure>
+<img src='images/hex_kernels.svg' style='width: 450px'></img>
+<figcaption>Hexagonal grid convolutional filters.</figcaption>
+</figure>
+<p>Our model, trained in a purely square environment, works out of the box on a hexagonal grid! Play the corresponding setting in the demo to experiment with this. Zooming in allows observation of the individual hexagonal or square cells. As you can see in the demo, the cells have no problem adjusting to a hexagonal world and produce identical patterns after a brief period of re-alignment.</p>
+
+<p> </p>
+<figure>
+<img src='images/coral_square.png' style='width: 450px'></img>
+<img src='images/coral_hex.png' style='width: 450px'></img>
+<figcaption>The same texture evaluated on a square and hexagonal grid, respectively.</figcaption>
+</figure>
+<h4 id='rotation'>Rotation</h4>
+<p></p>
+<figure>
+<img src="images/mond_rot0.png" style="width:40%;"></img>
+<img src="images/mond_rot1.png" style="width:40%;"></img>
+<img src="images/mond_rot2.png" style="width:40%;"></img>
+<img src="images/mond_rot3.png" style="width:40%;"></img>
+<figcaption>Mondrian pattern where the cells are rotated in various directions. Note that the NCA is not re-trained - it gen-
+eralises to this new rotated paradigm without issue.
+</figcaption>
+</figure>
+
+<p>In theory, the cells can be evaluated on any manifold where one can define approximations to the Sobel kernel and the Laplacian kernels. We demonstrate this in our demo by providing an aforementioned &quot;hexagonal&quot; world for the cells to live in. Instead of having eight equally-spaced neighbours, each cell now has six equally-spaced neighbours. We further demonstrate this versatility by rotating the Sobel and Laplacian kernels. Each cell receives an innate global orientation based on these kernels, because they are defined with respect to the coordinate system of the state. Redefining the Sobel and Laplacian kernel with a rotated coordinate system is straightforward and can even be done on a per-cell level. Such versatility is exciting because it mirrors the extreme robustness found in biological cells in nature. Cells in most tissues will generally continue to operate whatever their location, direction, or exact placement relative to their neighbours. We believe this versatility in our model could even extend to a setting where the cells are placed on a manifold at random, rather than on an ordered grid.</p>
+<h4 id='timesynchronization-'>Time-synchronization </h4>
+<p></p>
+<figure>
+<video src='videos/time_unsynced.mp4' autoplay loop controls muted style='width: 450px'></video>
+<figcaption>Two NCAs running next to each other, at different speeds, with some stochasticity in speed. They can communicate through their shared edge; the vertical boundary between them in the center of the state space.</figcaption>
+</figure>
+
+<p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two CAs sharing the state is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
+
+<p></p>
+<figure>
+<video src='videos/fig_13_chequered_0121.mp4' autoplay loop controls muted style='width: 450px'></video>
+<figcaption>An NCA is evaluated for a number of steps. The surrounding border of cells are then also turned into NCA cells. The cells have no difficulty communicating with the "finished" pattern and achieving consistency. </figcaption>
+</figure>
+
+<p>An even more drastic example of this robustness to time asynchronicity can be seen above. Here, an NCA is iterated until it achieves perfect consistency in a pattern. Then, the state space is expanded, introducing a border of new cells around the existing state. This border quickly interfaces with the existing cells and settles in a consistent pattern, with almost no perturbation to the already-converged inner state.</p>
+<h4 id='failure-cases'>Failure cases</h4>
+<p>The failure modes of a complex system can teach us a great deal about its internal structure and process. Our model has many quirks and sometimes these prevent it from learning certain patterns. Below are some examples.</p>
+<p></p>
+<figure>
+<img src="images/fail_mondrian.jpeg" style="width:30%; max-width: 150px;"></img>
+<img src="images/fail_sprinkle.jpeg" style="width:30%; max-width: 150px;"></img>
+<img src="images/fail_chequerboard.jpeg" style="width:30%; max-width: 150px;"></img>
+<figcaption>Three failure cases of the NCA. Bottom row shows target texture samples, top row are corresponding NCA outputs. Failure modes include incorrect colours, chequerboard artefacts, and incoherent image structure.</figcaption>
+</figure>
+
+<p>Some patterns are reproduced somewhat accurately in terms of structure, but not in colour, while some are the opposite. Others fail completely. It is difficult to determine whether these failure cases have their roots in the parametrization (the NCA), or in the hard-to-interpret gradient signals from VGG, or Inception. Existing work with style transfer suggests that using a loss on Gram matrices in VGG can introduce instabilities <d-cite key="Risser_Wilmot_Barnes_2017"></d-cite>, that are similar to the ones we see here. We hypothesize that this effect explains the failures in reproducing colors. The structural failures, meanwhile, may be caused by the NCA parameterization, which makes it difficult for cells to establish long-distance communication with one another.</p>
+<h3 id='hidden-states'>Hidden states</h3>
+<p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells, and even emit different chemical signals to diffuse over the local substrate <d-cite key="Hadden_Young_2017"></d-cite>. </p>
+
+<p>There are various ways to visualize communication channels in real cells. One of them is to add to cells a potential-activated dye. Doing so gives a clear picture of the voltage potential the cell is under with respect to the surrounding substrate. This technique provides useful insight into the communication patterns within groups of cells and helps scientists visualize both local and global communication over a variety of time-scales.</p>
+
+<p>As luck would have it, we can do something similar with our Cellular Automata. Recall that our CA model contains 16 channels. The first three are visible RGB channels and the rest we treat as latent channels which are visible to adjacent cells during update steps, but excluded from loss functions. Below we map the first three principle components of the hidden channels to the R,G, and B channels respectively. Hidden channels can be considered "floating," to abuse a term from circuit theory. In other words, they are not pulled to any specific final state or intermediate state by the loss. Instead, they converge to some form of a dynamical system which assists the cell in fulfilling its objective with respect to its visible channels. There is no pre-defined assignment of different roles or meaning to different hidden channels, and there is almost certainly redundancy and correlation between different hidden channels. Such correlation may not be visible when we visualize the first three principal components in isolation. But this concern aside, the visualization yields some interesting insights anyways.</p>
+<p>	</p>
+<figure>
+<video src='videos/hidden_pca.mp4' autoplay loop muted controls style='width: 650px'></video>
+<figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br> An NCA trained to excite <b>mixed4b_70</b> in Inception. Notice the hidden states appear to encode information about structure. "Threads" along the major diagonal (NW - SE) appear primarily green, while those running along the anti-diagonal appear blue, indicating that these have differing internal states, despite being effectively indistinguishable in RGB space.</figcaption>
+</figure>
+
+<p>In the principal components of this coral-like texture, we see a pattern which is similar to the visible channels. However, the &quot;threads&quot; pointing in each diagonal direction have different colours - one diagonal is green and the other is a pale blue. This suggests that one of the things encoded into the hidden states is the direction of a &quot;thread&quot;, likely to allow cells that are inside one of these threads to keep track of which direction the thread is growing, or moving, in. </p>
+
+<p></p>
+<figure>
+<video src='videos/chequered_hidden.mp4' autoplay loop muted controls style='width: 650px'></video>
+<figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br> An NCA trained to produce a texture based on DTD image <b>cheqeuered_0121</b>. Notice the structure of squares - with a gradient occurring inside the structure of each square, evidencing that structure is being encoded in hidden state.</figcaption>
+</figure>
+<p>The chequerboard pattern likewise lends itself to some qualitative analysis and hints at a fairly simple mechanism for maintaining the shape of squares. Each square has a clear gradient in PCA space across the diagonal, and the values this gradient traverses differ for the white and black squares. We find it likely the gradient is used to provide a local coordinate system for creating and sizing the squares. </p>
+
+<p></p>
+<figure>
+<video src='videos/eyes_hidden.mp4' autoplay loop muted controls style='width: 650px'></video>
+<figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br>  An NCA trained to excite <b>mixed4c_208</b> in Inception. The visible body of the eye is clearly demarcated in the hidden states. There is also a "halo" which appears to modulate growth of any solitons immediately next to each other. This halo is barely visible in the RGB channels.</figcaption>
+</figure> 
+<p>We find surprising insight in NCA trained on Inception as well. In this case, the structure of the eye is clearly encoded in the hidden state with the body composed primarily of one combination of principal components, and an halo, seemingly to prevent collisions of the eye solitons, composed of another set of principal components.</p>
+
+<p>Analysis of these hidden states is something of a dark art; it is not always possible to draw rigorous conclusions about what is happening. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs. We also hypothesize that it may be possible to modify or alter hidden states in order to affect the morphology and behaviour of NCA. </p>
+<h2 id='conclusion'>Conclusion</h2>
+<p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pre-trained neural network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
+
+
+</d-article>
+<d-appendix>
+<h3 id='acknowledgments'>Acknowledgments</h3>
+<p>We'd like to thank Sam Greydanus for especially thoughtful proofreading and giving extensive feedback throughout the article. We also extend our gratitude to the other reviewers; Maximilian Otte, Aleksandr Groznykh, and Smitty van Bodegom. Finally, we would like to acknowledge the continued support from Blaise Aguera y Arcas and Dominik Roblek, without whom this work wouldn&#39;t be possible. </p>
+<h3 id='author-contributions'>Author Contributions</h3>
+<p><strong>Research</strong>: Alexander proposed using Neural CA for texture synthesis and feature visualization and prototyped the TF and PyTorch implementations. Eyvind refined the implementation and performed most of the article experiments.</p>
+
+<p><strong>Demos</strong>: Alexander implemented the WebGL NCA engine. Eyvind implemented the demo UI.</p>
+
+<p><strong>Writing and Diagrams</strong>: Eyvind wrote most of the article text and created most of the diagrams and videos. Michael provided the biological context for the article. Alexander and Ettore contributed to the content.</p>
+<h3 id='an-aside-solitons-and-lenia'>An Aside: Solitons and Lenia</h3>
+<p>The motion of waves propagating through a medium can be described using the classical wave equation. The equation below defines the change of some quantity $u$ (be it the surface height map of a body of water, the position of a vibrating string, etc.) with respect to the laplacian of $u$. $c$ ends up being the propagation speed of the wave.</p>
+
+<figure>
+<p>$\ddot u &#x3D; c^2 \nabla^2 u$2</p>
+</figure>
+
+<p>One can imagine waves to come either as a single wave, or as a larger mixture of waves of different frequencies (a phenomenon referred to as a group or a packet). Physical phenomena, however, are rarely as structured and regular as we would like them to be. To describe the propagation of real-world waves in most physical media, such as waves in water, or sound, we must use somewhat more complex partial differential equations. Many of these systems, with the notable exception of light, share a property that waves of different frequencies will travel at different speeds. "Speed" in such a context is a tricky thing to define - however in this case we are referring to the speed of any localized quantity of energy - how fast its peak travels in space. In the above, classic, wave equation this corresponds to $c$. However, in the real world, when waves of different frequencies have different speeds, groups of waves are no longer cohesive and will experience "dispersion": the envelope of the group of waves will change shape over time and potentially not remain cohesive. Even in wave groups with dispersive properties, it is possible to find solutions to their partial differential equations where nonlinearities in the propagation and interaction between waves will counteract the dispersive properties of the wave group. This phenomenon, while lacking a strict definition, is called a "soliton". It describes a wave packet which retains its shape during propagation.</p>
+
+<p>Recall the idea (touched upon in <a href='https://distill.pub/2020/growing-ca/'>Growing Neural Cellular Automata</a>) that a grid of communicating NCAs can be thought of as a finite difference approximation of a partial differential equation in both time and space. Several of the patterns we render in the pattern-generation experiment, as well as in  the inception experiment, consist of well-defined structures such as circles or polygons. We consider such structures to be functionally equivalent to solitons and refer to them as such. Such a classification is inspired by B. Chan&#39;s reference to solitons in "Lenia." He defines them as solid, self-maintaining structures which arise in the continuous approximation of the Game of Life.</p>
+<h3 id='attribution'>Attribution</h3>
+<p>The &quot;<a href='https://thenounproject.com/term/mouse-scroll/496854/'>mouse</a>&quot; and &quot;<a href='https://thenounproject.com/search/?q=swipe&i=893260'>swipe</a>&quot; icons in the demo are licensed under CC-BY.</p>
+
+    <d-footnote-list></d-footnote-list>
+    <d-citation-list></d-citation-list>
+<d-appendix>
+  <d-bibliography src="bibliography.bib"></d-bibliography>
+</body>
