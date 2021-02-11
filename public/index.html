@@ -402,10 +402,17 @@
 #pattern-controls {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: min-content minmax(0, 0.4fr) min-content minmax(0, 0.4fr) min-content minmax(0, 0.1fr);
+    grid-template-rows: min-content minmax(0, 0.3fr) min-content minmax(0, 0.3fr) minmax(0, 0.32fr) minmax(0, 0.1fr);
     /*row-gap: 20px;*/
     overflow: hidden;
 }
+
+@media (max-width: 1180px) {
+  #pattern-controls {
+    grid-template-rows: min-content minmax(0, 0.4fr) min-content minmax(0, 0.4fr) min-content minmax(0, 0.1fr);
+  }
+}
+
 
 .pattern-selector::-webkit-scrollbar {
     display: none;
