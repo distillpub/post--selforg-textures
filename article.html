@@ -243,7 +243,7 @@ Sobel_x & Sobel_y & Laplacian
 <img src="images/fail_mondrian.jpeg" style="width:130px;"></img>
 <img src="images/fail_sprinkle.jpeg" style="width:130px;"></img>
 <img src="images/fail_chequerboard.jpeg" style="width:130px;"></img>
-<figcaption>Three failure cases of the NCA. Template on left and NCA output on right for each, respectively. Failure modes include incorrect colours, chequerboard artefacts, and incorrect size or shape reproduction.</figcaption>
+<figcaption>Three failure cases of the NCA. Template on bottom and NCA output on top for each, respectively. Failure modes include incorrect colours, chequerboard artefacts, and incorrect size or shape reproduction.</figcaption>
 </figure>
 
 <p>Some patterns are reproduced somewhat accurately in terms of structure, but not in colour, while some are the opposite. Others fail completely. It is difficult to determine whether these failure cases have their roots in the parametrization (the NCA), or in the hard-to-interpret gradient signals from VGG. Existing work with style transfer suggests that using a loss on Gram matrices in VGG can introduce instabilities<d-cite key="Risser_Wilmot_Barnes_2017"></d-cite>, that are similar to the ones we see here. We hypothesize that this effect explains the failures in reproducing colors. The structural failures, meanwhile, may be caused by the NCA parameterization, which makes it difficult for cells to establish long-distance communication with one another.</p>
