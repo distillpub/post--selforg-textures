@@ -29,20 +29,26 @@
 <h4 id='pdes'>PDEs</h4>
 <p>In &quot;The Chemical Basis of Morphogenesis&quot; <d-cite key="Turing_1990"></d-cite>, Alan Turing suggested that simple physical processes of reaction and diffusion, modelled by partial differential equations, lie behind pattern formation in nature, such as the aforementioned Zebra stripes. Extensive work has since been done to identify PDEs modeling reaction-diffusion and evaluating their behaviour. One of the more celebrated examples is the Gray-Scott model of reaction diffusion (<d-cite key="Lee_McCormick_Ouyang_Swinney_1993"></d-cite>,<d-cite key="Pearson_1993"></d-cite>). This process has a veritable zoo of interesting behaviour, explorable by simply tuning the two parameters. We strongly encourage readers to visit this <a href='http://mrob.com/pub/comp/xmorphia/'>interactive atlas</a> of the different regions of the Gray-Scott reaction diffusion model to get a sense for the extreme variety of behaviour hidden behind two simple knobs. The more adventurous can even <a href='https://groups.csail.mit.edu/mac/projects/amorphous/jsim/sim/GrayScott.html'>play with a simulation locally</a> or <a href='https://mrob.com/pub/comp/xmorphia/ogl/index.html'>in the browser</a>.</p>
 
-<p>A somewhat more general version of the above systems can be described by a simple Partial Differential Equation (PDE) over the state space of an image. </p>
+<p>To tackle the problem of reproducing our textures, we propose a more general version of the above systems, described by a simple Partial Differential Equation (PDE) over the state space of an image. </p>
 
 <figure>
 $\frac{\partial \mathbf{s} }{\partial  t } = f(\textbf{s}, \nabla_\mathbf{x} \textbf{s}, \nabla_\mathbf{x}^{2}\textbf{s})$
 </figure>
 
-<p>Here, $f$ a function that depends on the gradient and Laplacian of the state space and determines the time evolution of this state space. Intuitively, we have defined a system where every point of the image changes with time, in a way that depends on how the image currently changes across space, with respect to its immediate neighbourhood. Readers may start to recognize the resemblance between this and another system based on immediately local interactions.</p>
+<p>Here, $f$ a function that depends on the gradient ($\nabla_\mathbf{x} \textbf{s}$) and Laplacian  ($\nabla_\mathbf{x}^{2}\textbf{s}$) of the state space and determines the time evolution of this state space. $s$ represents a k dimensional vector, whose first three components correspond to the visible RGB color channels. </p>
+
+<p>Intuitively, we have defined a system where every point of the image changes with time, in a way that depends on how the image currently changes across space, with respect to its immediate neighbourhood. Readers may start to recognize the resemblance between this and another system based on immediately local interactions.</p>
 <h4 id='to-cas'>To CAs</h4>
 
 <p>Differential equations governing natural phenomena are usually evaluated using numerical differential equation solvers. Indeed, this is sometimes the <strong>only</strong> way to solve them, as many PDEs and ODEs of interest do not have closed form solutions. This is even the case for some deceptively simple ones, such as the <a href='https://en.wikipedia.org/wiki/Three-body_problem'>three-body problem</a>. Numerically solving PDEs and ODEs is a vast and well-established field. One of the biggest hammers in the metaphorical toolkit for numerically evaluating differential equations is discretization: the process of converting the variables of the system from continuous space to a discrete space, where numerical integration is tractable. When using some ODEs to model a change in a phenomena over time, for example, it makes sense to advance through time in discrete steps, possibly of variable size. </p>
 
-<p>In our case, the logical approach is to discretize the continuous 2D image space into a 2D raster grid. Boundary conditions are of concern but we can address them by moving to a toroidal world where each dimension wraps around on itself.</p>
+<p>We now show that numerically integrating the aforementioned PDE is equivalent to reframing the problem as a Neural Cellular Automata, with $f$ assuming the role of the NCA rule. </p>
 
-<p>Our next step towards representing a PDE with cellular automata is to discretize the gradient and Laplacian operators. For this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete Laplace operator, as below. We pick these for ease of use.</p>
+<p>The logical approach to discretize the space the PDE operates on is to discretize the continuous 2D image space into a 2D raster grid. Boundary conditions are of concern but we can address them by moving to a toroidal world where each dimension wraps around on itself. </p>
+
+<p>Similarly to space, we choose to treat time in a discretized fashion and evaluate our NCA at fixed-sized time steps. This is equivalent to Euler integration. However, here we make an important deviation from traditional PDE numerical integration methods for two reasons. First, if all cells are updated synchronously, initial conditions $s_0$ must vary from cell-to-cell in order to break the symmetry. Second, the physical implementation of the synchronous model would require the existence of a global clock, shared by all cells. One way to work around the former is by initializing the grid with random noise, but in the spirit of self organisation we instead choose to decouple the cell updates, by asynchronously evaluating the CA. We sample a subset of all cells at each time-step to update. This introduces both asynchronicity in time (cells will sometimes operate on information from their neighbours that is several timesteps old), and asymmetry in space, solving both aforementioned issues.</p>
+
+<p>Our next step towards representing a PDE with cellular automata is to discretize the gradient and Laplacian operators. For this we use the <a href='https://en.wikipedia.org/wiki/Sobel_operator'>sobel operator</a> and the <a href='https://en.wikipedia.org/wiki/Discrete_Laplace_operator'>9-point variant</a> of the discrete Laplace operator, as below.</p>
 
 <figure>
 $ \begin{array}{ c c c }
@@ -62,9 +68,9 @@ Sobel_x & Sobel_y & Laplacian
 \end{array}$
 </figure>
 
-<p>We now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that, as our grid becomes very fine, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE.</p>
+<p>With all the pieces in place, we now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that as our grid becomes very fine, and the asynchronous updates approach uniformity, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE as we defined it.</p>
 <h4 id='to-neural-networks'>To Neural Networks</h4>
-<p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks.  </p>
+<p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks. We provide both a Tensorflow and a minimal PyTorch implementation for reference, and refer to these for details on our implementation decisions.  </p>
 
 <h3 id='ncas-as-pattern-generators'>NCAs as pattern generators</h3>
 
@@ -168,43 +174,41 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>A common approach to investigating neural networks is to look at what inhibits or excites individual neurons in a network <d-cite key="Schubert_Petrov_Carter_Cammarata_Goh_Olah_2020"></d-cite>. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is a large contemporary body of work on doing the same with neural networks. For instance the work by Boettiger.  <d-cite key="Boettiger_Ermentrout_Oster_2009"></d-cite> <d-cite key="Boettiger_Oster_2009"></d-cite>.</p>
 
-<p>We can explore this idea with minimal effort by taking our VGG implementation from when we explored pattern generation, and exploring what happens if we task the NCA to enter a state that excites a given neuron in VGG. One of the common resulting NCAs we notice is eye and eye-related shapes - such as the video below - likely as a result of having to detect various animals in ImageNet. In the same way that cells form eye patterns on the wings of butterflies to excited neurons in the brains of predators, our NCA&#39;s population of cells has learned to collaborate to produce a pattern that excites certain neurons in an external neural network.</p>
+<p>We can explore this idea with minimal effort by taking our pattern-generating NCA and exploring what happens if we task it to enter a state that excites a given neuron in Inception. One of the common resulting NCAs we notice is eye and eye-related shapes - such as the video below - likely as a result of having to detect various animals in ImageNet. In the same way that cells form eye patterns on the wings of butterflies to excite neurons in the brains of predators, our NCA&#39;s population of cells has learned to collaborate to produce a pattern that excites certain neurons in an external neural network.</p>
 
 <p></p>
 <figure>
 <!--<img src='images/mixed4a_472_microscope.png' style='width: 325px'></img>-->
 <video src='videos/eyes.mp4' autoplay loop muted controls style='width: 325px'></video>
-<figcaption>An NCA trained to excite <b>mixed4a_472</b> in VGG.</figcaption>
+<figcaption>An NCA trained to excite <b>mixed4a_472</b> in Inception.</figcaption>
 </figure>
 
 <h3 id='experiment-feature-visualization'>Experiment: Feature Visualization</h3>
 <h4 id='model-'>Model: </h4>
-<p>We use a model identical to the one used for exploring pattern generation. </p>
+<p>We use a model identical to the one used for exploring pattern generation, but with a different discriminator network: Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>.</p>
 <h4 id='loss-function-'>Loss function: </h4>
-<p>In this experiment we use Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>. Our loss maximizes the activations of the chosen neurons, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of the Inception frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
+<p>Our loss maximizes the activations of chosen neurons, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of the Inception frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
 <h4 id='dataset-'>Dataset: </h4>
 <p>There is no explicit dataset for this task. Inception is trained on ImageNet. The layers and neurons we chose to excite are chosen qualitatively using OpenAI Microscope.</p>
 <h4 id='results'>Results:</h4>
-<p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions. In other words, resulting NCAs do not stay still.</p>
+<p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions. In other words, resulting NCAs do not stay still. We also observe that the majority of the NCAs learn to produce solitons of various kinds. We discuss a few below, but encourage readers to explore them in the demo. </p>
 
-<h2 id='other-interesting-findings'>Other interesting findings</h2>
-<h3 id='interesting-behaviours-of-inception-solitons'>Interesting behaviours of inception solitons</h3>
 <p></p>
 <figure>
 <!--<img src='images/mixed4c_439_microscope.png' style='width: 325px'></img>-->
 <video src='videos/eyes.mov' autoplay loop muted controls style='width: 325px'></video>
-<figcaption>An NCA trained to excite <b>mixed4c_439</b> in VGG.</figcaption>
+<figcaption>An NCA trained to excite <b>mixed4c_439</b> in Inception.</figcaption>
 </figure>
 <p>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may cause one or both of them to decay. We also observe that solitons can divide into two new solitons.</p>
 <p></p>
 <figure>
 <!--<img src='images/mixed3b_454_microscope.png' style='width: 325px'></img>-->
 <video src='videos/moving_thread.mov' autoplay loop muted controls style='width: 325px'></video>
-<figcaption>An NCA trained to excite <b>mixed3b_454</b> in VGG.</figcaption>
+<figcaption>An NCA trained to excite <b>mixed3b_454</b> in Inception.</figcaption>
 </figure>
 <p>In textures that are composed of threads or lines, or in certain excitations of Inception neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
 
-
+<h2 id='other-interesting-findings'>Other interesting findings</h2>
 <h3 id='robustness'>Robustness</h3>
 <h4 id='switching-manifolds'>Switching manifolds</h4>
 
@@ -226,12 +230,13 @@ Sobel_x & Sobel_y & Laplacian
 <p></p>
 <figure>
 <video src='videos/time_unsynced.mp4' autoplay loop controls muted style='width: 450px'></video>
-<figcaption>Two NCAs running next to each other, at different speeds. They can communicate through their shared edge.</figcaption>
+<figcaption>Two NCAs running next to each other, at different speeds, with some stochasticity in speed. They can communicate through their shared edge, the vertical boundary between them in the center of the state space.</figcaption>
 </figure>
 
-<p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two halves is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
+<p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two CAs sharing the state is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
 <h4 id='failure-cases'>Failure cases</h4>
 <p>The failure modes of a complex system can teach us a great deal about its internal structure and process. Our model has many quirks and sometimes these prevent it from learning certain patterns. Below are some examples.</p>
+
 
 
 <figure>
@@ -273,7 +278,7 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>Analysis of these hidden states is something of a dark art; it is not always possible to draw rigorous conclusions about what is happening. We welcome future work in this direction, as we believe qualitative analysis of these behaviours will be useful for understanding more complex behaviours of CAs. We also hypothesize that it may be possible to modify or alter hidden states in order to affect the morphology and behaviour of NCA. </p>
 <h2 id='conclusion'>Conclusion</h2>
-<p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pretrained nerual network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
+<p>In this work, we selected texture templates and individual neurons as targets and then optimized NCA populations so as to produce similar excitations in a pre-trained neural network. This procedure yielded NCAs that could render nuanced and hypnotic textures. During our analysis, we found that these NCAs have interesting and unexpected properties. Many of the solutions for generating certain patterns in an image appear similar to the underlying model or physical behaviour producing the pattern. For example, our learned NCAs seem to have a bias for treating objects in the pattern as individual objects and letting them move freely across space. While this effect was present in many of our models, it was particularly strong in the bubble and eye models. The NCA is forced to find algorithms that can produce such a pattern with purely local interaction. This constraint seems to produce models that favor high-level consistency and robustness.</p>
 
 
 </d-article>
