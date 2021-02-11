@@ -168,20 +168,20 @@ Sobel_x & Sobel_y & Laplacian
 
 <p>A common approach to investigating neural networks is to look at what inhibits or excites individual neurons in a network <d-cite key="Schubert_Petrov_Carter_Cammarata_Goh_Olah_2020"></d-cite>. Just as neuroscientists and biologists have often treated cells and cell structures and neurons as black-box models to be investigated, measured and reverse-engineered, there is a large contemporary body of work on doing the same with neural networks. For instance the work by Boettiger.  <d-cite key="Boettiger_Ermentrout_Oster_2009"></d-cite> <d-cite key="Boettiger_Oster_2009"></d-cite>.</p>
 
-<p>We can explore this idea with minimal effort by taking our VGG implementation from when we explored pattern generation, and exploring what happens if we task the NCA to enter a state that excites a given neuron in VGG. One of the common resulting NCAs we notice is eye and eye-related shapes - such as the video below - likely as a result of having to detect various animals in ImageNet. In the same way that cells form eye patterns on the wings of butterflies to excited neurons in the brains of predators, our NCA&#39;s population of cells has learned to collaborate to produce a pattern that excites certain neurons in an external neural network.</p>
+<p>We can explore this idea with minimal effort by taking our VGG implementation from when we explored pattern generation, and exploring what happens if we task the NCA to enter a state that excites a given neuron in Inception. One of the common resulting NCAs we notice is eye and eye-related shapes - such as the video below - likely as a result of having to detect various animals in ImageNet. In the same way that cells form eye patterns on the wings of butterflies to excited neurons in the brains of predators, our NCA&#39;s population of cells has learned to collaborate to produce a pattern that excites certain neurons in an external neural network.</p>
 
 <p></p>
 <figure>
 <!--<img src='images/mixed4a_472_microscope.png' style='width: 325px'></img>-->
 <video src='videos/eyes.mp4' autoplay loop muted controls style='width: 325px'></video>
-<figcaption>An NCA trained to excite <b>mixed4a_472</b> in VGG.</figcaption>
+<figcaption>An NCA trained to excite <b>mixed4a_472</b> in Inception.</figcaption>
 </figure>
 
 <h3 id='experiment-feature-visualization'>Experiment: Feature Visualization</h3>
 <h4 id='model-'>Model: </h4>
-<p>We use a model identical to the one used for exploring pattern generation. </p>
+<p>We use a model identical to the one used for exploring pattern generation, but with a different discriminator network: Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>.</p>
 <h4 id='loss-function-'>Loss function: </h4>
-<p>In this experiment we use Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>. Our loss maximizes the activations of the chosen neurons, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of the Inception frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
+<p>Our loss maximizes the activations of chosen neurons, when evaluated on the output of the NCA. We add an auxiliary loss to encourage the outputs of the NCA to be $\in [0,1]$, as this is not inherently built into the model. We keep the weights of the Inception frozen and use ADAM <d-cite key="Kingma_Ba_2014"></d-cite> to update the weights of the NCA.</p>
 <h4 id='dataset-'>Dataset: </h4>
 <p>There is no explicit dataset for this task. Inception is trained on ImageNet. The layers and neurons we chose to excite are chosen qualitatively using OpenAI Microscope.</p>
 <h4 id='results'>Results:</h4>
@@ -193,14 +193,14 @@ Sobel_x & Sobel_y & Laplacian
 <figure>
 <!--<img src='images/mixed4c_439_microscope.png' style='width: 325px'></img>-->
 <video src='videos/eyes.mov' autoplay loop muted controls style='width: 325px'></video>
-<figcaption>An NCA trained to excite <b>mixed4c_439</b> in VGG.</figcaption>
+<figcaption>An NCA trained to excite <b>mixed4c_439</b> in Inception.</figcaption>
 </figure>
 <p>Solitons in the form of regular circle-like shapes with internal structure are quite commonly observed in the inception renderings. Two solitons approaching each other too closely may cause one or both of them to decay. We also observe that solitons can divide into two new solitons.</p>
 <p></p>
 <figure>
 <!--<img src='images/mixed3b_454_microscope.png' style='width: 325px'></img>-->
 <video src='videos/moving_thread.mov' autoplay loop muted controls style='width: 325px'></video>
-<figcaption>An NCA trained to excite <b>mixed3b_454</b> in VGG.</figcaption>
+<figcaption>An NCA trained to excite <b>mixed3b_454</b> in Inception.</figcaption>
 </figure>
 <p>In textures that are composed of threads or lines, or in certain excitations of Inception neurons where the resulting NCA has a &quot;thread-like&quot; quality, the threads grow in their respective directions and will join other threads, or grow around them, as required. This behaviour is similar to the regular lines observed in the striped patterns during pattern generation.</p>
 
@@ -229,7 +229,7 @@ Sobel_x & Sobel_y & Laplacian
 <figcaption>Two NCAs running next to each other, at different speeds. They can communicate through their shared edge.</figcaption>
 </figure>
 
-<p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two halves is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
+<p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two CAs sharing the state is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
 <h4 id='failure-cases'>Failure cases</h4>
 <p>The failure modes of a complex system can teach us a great deal about its internal structure and process. Our model has many quirks and sometimes these prevent it from learning certain patterns. Below are some examples.</p>
 
