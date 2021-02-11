@@ -12,7 +12,7 @@
 <h2 id='patterns-textures-and-physical-processes'>Patterns, textures and physical processes</h2>
 <p></p>
 <figure>
-<img src='images/zebra.jpg' style='width: 450px'>
+<img src='images/zebra.jpg' style='width: 350px'>
 <figcaption>A pair of Zebra. Zebra are said to have unique stripes.</figcaption>
 </figure>
 
@@ -71,7 +71,7 @@ Sobel_x & Sobel_y & Laplacian
 <p>With all the pieces in place, we now have a space-discretized version of our PDE that looks very much like a Cellular Automata: the time evolution of each discrete point in the raster grid depends only on its immediate neighbours. These discrete operators allow us to formalize our PDE as a CA. To double check that this is true, simply observe that as our grid becomes very fine, and the asynchronous updates approach uniformity, the dynamics of these discrete operators will reproduce the continuous dynamics of the original PDE as we defined it.</p>
 <h4 id='to-neural-networks'>To Neural Networks</h4>
 <p>The final step in implementing the above general PDE for texture generation is to translate it to the language of deep learning. Fortunately, all the operations involved in iteratively evaluating the generalized PDE exist as common operations in most deep learning frameworks. We provide both a Tensorflow and a minimal PyTorch implementation for reference, and refer to these for details on our implementation.  </p>
-<h3 id='ncas-as-pattern-generators'>NCAs as pattern generators</h3>
+<h3 id='nca-as-pattern-generators'>NCA as pattern generators</h3>
 <h4 id='model'>Model:</h4>
 <p></p>
 <figure style='margin-left: auto; margin-right: auto; grid-column: page; width: 100%; max-width: 800px' >
@@ -157,11 +157,11 @@ Sobel_x & Sobel_y & Laplacian
 <p>Perhaps the most unconventional approach, with which we find kinship, is laid out in Interactive Evolution of Camouflage <d-cite key="Reynolds_2011"></d-cite>. Craig Reynolds uses a texture description language, consisting of generators and operators, to parametrize a texture patch, which is presented to human viewers who have to decide which patches are the worst at &quot;camouflaging&quot; themselves against a chosen background texture. The population is updated in an evolutionary fashion to maximize &quot;camouflage&quot;, resulting in a texture exhibiting the most camouflage (to human eyes) after a number of iterations. We see strong parallels with our work - instead of a texture generation language, we have an NCA parametrize the texture, and instead of human reviewers we use VGG as an evaluator of the quality of a generated pattern. We believe a fundamental difference lies in the solution space of an NCA. A texture generation language comes with a number of inductive biases and learns a deterministic mapping from coordinates to colours. Our method appears to learn more general algorithms and behaviours giving rise to the target pattern.</p>
 
 <p>Two other noteworthy examples of similar work are Portilla et. al&#39;s work with the wavelet transform <d-cite key="Portilla_Simoncelli_2000"></d-cite>, and work by Chen et al with reaction diffusion <d-cite key="Chen_Pock_2017"></d-cite>.</p>
-<h2 id='feature-visualization'>Feature Visualization</h2>
+<h2 id='feature-visualization'>Feature visualization</h2>
 
 <p></p>
 <figure>
-<img src='images/butterfly_eye.jpg' style='width: 450px'></img>
+<img src='images/butterfly_eye.jpg' style='width: 350px'></img>
 <figcaption>A butterfly with an "eye-spot" on the wings.</figcaption>
 </figure>
 
@@ -182,7 +182,7 @@ Sobel_x & Sobel_y & Laplacian
 <figcaption>An NCA trained to excite <b>mixed4a_472</b> in Inception.</figcaption>
 </figure>
 
-<h3 id='nca-inception-'>NCA Inception </h3>
+<h3 id='nca-with-inception-'>NCA with Inception </h3>
 <h4 id='model-'>Model: </h4>
 <p>We use a model identical to the one used for exploring pattern generation, but with a different discriminator network: Imagenet-trained Inception v1 network <d-cite key="szegedy2015going"></d-cite>.</p>
 <h4 id='loss-function-'>Loss function: </h4>
@@ -264,7 +264,7 @@ eralises to this new rotated paradigm without issue.
 <figcaption>Three failure cases of the NCA. Bottom row shows target texture samples, top row are corresponding NCA outputs. Failure modes include incorrect colours, chequerboard artefacts, and incoherent image structure.</figcaption>
 </figure>
 
-<p>Some patterns are reproduced somewhat accurately in terms of structure, but not in colour, while some are the opposite. Others fail completely. It is difficult to determine whether these failure cases have their roots in the parametrization (the NCA), or in the hard-to-interpret gradient signals from VGG. Existing work with style transfer suggests that using a loss on Gram matrices in VGG can introduce instabilities<d-cite key="Risser_Wilmot_Barnes_2017"></d-cite>, that are similar to the ones we see here. We hypothesize that this effect explains the failures in reproducing colors. The structural failures, meanwhile, may be caused by the NCA parameterization, which makes it difficult for cells to establish long-distance communication with one another.</p>
+<p>Some patterns are reproduced somewhat accurately in terms of structure, but not in colour, while some are the opposite. Others fail completely. It is difficult to determine whether these failure cases have their roots in the parametrization (the NCA), or in the hard-to-interpret gradient signals from VGG, or Inception. Existing work with style transfer suggests that using a loss on Gram matrices in VGG can introduce instabilities <d-cite key="Risser_Wilmot_Barnes_2017"></d-cite>, that are similar to the ones we see here. We hypothesize that this effect explains the failures in reproducing colors. The structural failures, meanwhile, may be caused by the NCA parameterization, which makes it difficult for cells to establish long-distance communication with one another.</p>
 <h3 id='hidden-states'>Hidden states</h3>
 <p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells, and even emit different chemical signals to diffuse over the local substrate <d-cite key="Hadden_Young_2017"></d-cite>. </p>
 
@@ -274,7 +274,7 @@ eralises to this new rotated paradigm without issue.
 <p>	</p>
 <figure>
 <video src='videos/hidden_pca.mp4' autoplay loop muted controls style='width: 650px'></video>
-<figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br> An NCA trained to excite <b>mixed4b_70</b> in VGG. Notice the hidden states appear to encode information about structure. "Threads" along the major diagonal (NW - SE) appear primarily green, while those running along the anti-diagonal appear blue, indicating that these have differing internal states, despite being effectively indistinguishable in RGB space.</figcaption>
+<figcaption><b>Left:</b> RGB channels of NCA. <b>Right:</b> Intensities of top three principal components of hidden states. <br><br> An NCA trained to excite <b>mixed4b_70</b> in Inception. Notice the hidden states appear to encode information about structure. "Threads" along the major diagonal (NW - SE) appear primarily green, while those running along the anti-diagonal appear blue, indicating that these have differing internal states, despite being effectively indistinguishable in RGB space.</figcaption>
 </figure>
 
 <p>In the principal components of this coral-like texture, we see a pattern which is similar to the visible channels. However, the &quot;threads&quot; pointing in each diagonal direction have different colours - one diagonal is green and the other is a pale blue. This suggests that one of the things encoded into the hidden states is the direction of a &quot;thread&quot;, likely to allow cells that are inside one of these threads to keep track of which direction the thread is growing, or moving, in. </p>
@@ -301,7 +301,7 @@ eralises to this new rotated paradigm without issue.
 </d-article>
 <d-appendix>
 <h3 id='acknowledgments'>Acknowledgments</h3>
-<p>We'd like to thank Sam Greydanus for especially thoughtful proofreading and giving extensive feedback throughout the article. We also extend our gratitude to the other reviewers; Maximilian Otte, Aleksandr Groznykh, and Smitty van Bodegom. Finally, we would like to acknowledge the continued support of Blaise Aguera y Arcas, without which this work wouldn&#39;t be possible. </p>
+<p>We'd like to thank Sam Greydanus for especially thoughtful proofreading and giving extensive feedback throughout the article. We also extend our gratitude to the other reviewers; Maximilian Otte, Aleksandr Groznykh, and Smitty van Bodegom. Finally, we would like to acknowledge the continued support from Blaise Aguera y Arcas and Dominik Roblek, without whom this work wouldn&#39;t be possible. </p>
 <h3 id='author-contributions'>Author Contributions</h3>
 <p><strong>Research</strong>: Alexander proposed using Neural CA for texture synthesis and feature visualization and prototyped the TF and PyTorch implementations. Eyvind refined the implementation and performed most of the article experiments.</p>
 
