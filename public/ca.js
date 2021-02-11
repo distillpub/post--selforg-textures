@@ -620,7 +620,6 @@ export class CA {
     }
 
     clearCircle(x, y, r, brush, zoom=1.0) {
-        console.log(zoom);
         self.runLayer(self.progs.paint, this.buf.state, {
             u_pos: [x, y], u_r: r, u_brush: [0, 0, 0, 0], u_hexGrid: this.hexGrid, u_zoom: zoom
         });
