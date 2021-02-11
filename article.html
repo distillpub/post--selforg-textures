@@ -3,9 +3,9 @@
 {% include nextPrev.html %}
 <p style="color:red;">This is a draft. Please do not share it further. If you want to comment or suggest changes, please ask access to this <a href="https://docs.google.com/document/d/1VX7tb6enGPlGm6VMYsX7uuDIb-L8YSCv3YYYLvdDSY4">Google Document</a>.</p>
 
-<p>Neural Cellular Automata (NCA<d-footnote> We use NCA to refer to both <i>Neural Cellular Automata </i>and <i>Neural Cellular Automaton</i>.</d-footnote>) are capable of learning a diverse set behaviours: from generating stable, regenerating, static images  <d-cite key="Mordvintsev_Randazzo_Niklasson_Levin_2020"></d-cite>, to segmenting images  <d-cite key="Sandler_Zhmoginov_Luo_Mordvintsev_Randazzo_Arcas_2020"></d-cite>, to learning to "self-classify" shapes <d-cite key="Randazzo_Mordvintsev_Niklasson_Levin_Greydanus_2020"></d-cite>. The inductive bias imposed by using cellular automata is powerful. A system of individual agents running the same learned local rule can solve surprisingly complex tasks. Moreover, individual agents, or cells, can learn to coordinate their behavior even when separated by large distances. By construction, they solve these tasks in a massively parallel and inherently degenerate<d-footnote> Degenerate in this case refers to the <a href='https://en.wikipedia.org/wiki/Degeneracy_(biology)'>biological concept of degeneracy</a>.</d-footnote> way. Each cell must be able to take on the role of any other cell - as a result they tend to generalize well to unseen situations.</p>
+<p>Neural Cellular Automata (NCA<d-footnote> We use NCA to refer to both <i>Neural Cellular Automata </i>and <i>Neural Cellular Automaton</i>.</d-footnote>) are capable of learning a diverse set of behaviours: from generating stable, regenerating, static images  <d-cite key="Mordvintsev_Randazzo_Niklasson_Levin_2020"></d-cite>, to segmenting images  <d-cite key="Sandler_Zhmoginov_Luo_Mordvintsev_Randazzo_Arcas_2020"></d-cite>, to learning to "self-classify" shapes <d-cite key="Randazzo_Mordvintsev_Niklasson_Levin_Greydanus_2020"></d-cite>. The inductive bias imposed by using cellular automata is powerful. A system of individual agents running the same learned local rule can solve surprisingly complex tasks. Moreover, individual agents, or cells, can learn to coordinate their behavior even when separated by large distances. By construction, they solve these tasks in a massively parallel and inherently degenerate<d-footnote> Degenerate in this case refers to the <a href='https://en.wikipedia.org/wiki/Degeneracy_(biology)'>biological concept of degeneracy</a>.</d-footnote> way. Each cell must be able to take on the role of any other cell - as a result they tend to generalize well to unseen situations.</p>
 
-<p>In this work, we apply NCA to the task of texture synthesis. This task involves reproducing the overall appearance of a texture template, as opposed to making pixel-perfect copies. In this article we are going to focus on texture losses that allow for a degree of ambiguity. After training NCA models to reproduce textures, we subsequently investigate their learned behaviors and observe a few surprising effects. Starting from these investigations, we make the case that the cells learn distributed, local, algorithms. </p>
+<p>In this work, we apply NCA to the task of texture synthesis. This task involves reproducing the general appearance of a texture template, as opposed to making pixel-perfect copies. In this article we are going to focus on texture losses that allow for a degree of ambiguity. After training NCA models to reproduce textures, we subsequently investigate their learned behaviors and observe a few surprising effects. Starting from these investigations, we make the case that the cells learn distributed, local, algorithms. </p>
 
 <p>To do this, we apply an old trick: we employ neural cellular automata as a differentiable image parameterization <d-cite key="Mordvintsev_Pezzotti_Schubert_Olah_2018"></d-cite>.</p>
 
@@ -217,7 +217,7 @@ Sobel_x & Sobel_y & Laplacian
 <img src='images/hex_kernels.svg' style='width: 450px'></img>
 <figcaption>Hexagonal grid convolutional filters.</figcaption>
 </figure>
-<p>Our model, trained in a purely square environment, works out of the box on a hexagonal grid! Play the corresponding setting in the demo to experiment with this. Zooming in allows observation of the individual hexagonal or square cells. </p>
+<p>Our model, trained in a purely square environment, works out of the box on a hexagonal grid! Play the corresponding setting in the demo to experiment with this. Zooming in allows observation of the individual hexagonal or square cells. As you can see in the demo, the cells have no problem adjusting to a hexagonal world and produce identical patterns after a brief period of re-alignment.</p>
 
 <p> </p>
 <figure>
@@ -225,6 +225,15 @@ Sobel_x & Sobel_y & Laplacian
 <img src='images/coral_hex.png' style='width: 450px'></img>
 <figcaption>The same texture evaluated on a square and hexagonal grid, respectively.</figcaption>
 </figure>
+<h4 id='rotation'>Rotation</h4>
+
+<figure>
+<img src='images/coral_square.png' style='width: 450px'></img>
+<img src='images/coral_hex.png' style='width: 450px'></img>
+<figcaption>The same texture evaluated on a square and hexagonal grid, respectively.</figcaption>
+</figure>
+
+<p>In theory, the cells can be evaluated on any manifold where one can define approximations to the Sobel kernel and the Laplacian kernels. We demonstrate this in our demo by providing an aforementioned &quot;hexagonal&quot; world for the cells to live in. Instead of having eight equally-spaced neighbours, each cell now has six equally-spaced neighbours. We further demonstrate this versatility by rotating the Sobel and Laplacian kernels. Each cell receives an innate global orientation based on these kernels, because they are defined with respect to the coordinate system of the state. Redefining the Sobel and Laplacian kernel with a rotated coordinate system is straightforward and can even be done on a per-cell level. Such versatility is exciting because it mirrors the extreme robustness found in biological cells in nature. Cells in most tissues will generally continue to operate whatever their location, direction, or exact placement relative to their neighbours. We believe this versatility in our model could even extend to a setting where the cells are placed on a manifold at random, rather than on an ordered grid.</p>
 <h4 id='timesynchronization-'>Time-synchronization </h4>
 <p></p>
 <figure>
@@ -233,6 +242,8 @@ Sobel_x & Sobel_y & Laplacian
 </figure>
 
 <p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two CAs sharing the state is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
+
+<p></p>
 <figure>
 <video src='videos/fig_13_chequered_0121.mp4' autoplay loop controls muted style='width: 450px'></video>
 <figcaption>An NCA is evaluated for a number of steps. The surrounding border of cells are then also turned into NCA cells. The cells have no difficulty communicating with the "finished" pattern and achieving consistency. </figcaption>
@@ -250,8 +261,6 @@ Sobel_x & Sobel_y & Laplacian
 </figure>
 
 <p>Some patterns are reproduced somewhat accurately in terms of structure, but not in colour, while some are the opposite. Others fail completely. It is difficult to determine whether these failure cases have their roots in the parametrization (the NCA), or in the hard-to-interpret gradient signals from VGG. Existing work with style transfer suggests that using a loss on Gram matrices in VGG can introduce instabilities<d-cite key="Risser_Wilmot_Barnes_2017"></d-cite>, that are similar to the ones we see here. We hypothesize that this effect explains the failures in reproducing colors. The structural failures, meanwhile, may be caused by the NCA parameterization, which makes it difficult for cells to establish long-distance communication with one another.</p>
-<h4 id='rotation'>Rotation</h4>
-<p>The fixed convolutional kernels used in the first step of the networks introduce impressive modularity. In theory, the cells can be evaluated on any manifold where one can define approximations to the Sobel kernel and the Laplacian kernels. We demonstrate this in our demo by providing a &quot;hexagonal&quot; world for the cells to live in. Instead of having eight equally-spaced neighbours, each cell now has six equally-spaced neighbours. Defining the Sobel and Laplacian kernel is thankfully straightforward in this case. As you can see in the demo, the cells have no problem adjusting to a hexagonal world and produce identical patterns after a brief period of re-alignment. Such versatility is exciting because it mirrors the extreme robustness found in biological cells in nature. Cells in most tissues will generally continue to operate whatever their location or exact placement relative to their neighbours. We believe this versatility in our model could even extend to a setting where the cells are placed on a manifold at random, rather than on an ordered grid.</p>
 <h3 id='hidden-states'>Hidden states</h3>
 <p>When biological cells communicate with each other, they do so through a multitude of available communication channels. Cells can emit or absorb different ions and proteins, sense physical motion or "stiffness" of other cells, and even emit different chemical signals to diffuse over the local substrate <d-cite key="Hadden_Young_2017"></d-cite>. </p>
 
