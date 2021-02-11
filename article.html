@@ -191,9 +191,8 @@ Sobel_x & Sobel_y & Laplacian
 <h4 id='dataset-'>Dataset: </h4>
 <p>There is no explicit dataset for this task. Inception is trained on ImageNet. The layers and neurons we chose to excite are chosen qualitatively using OpenAI Microscope.</p>
 <h4 id='results'>Results:</h4>
-<p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions. In other words, resulting NCAs do not stay still.</p>
+<p>Similar to the pattern generation experiment, we see quick convergence and a tendency to find temporally dynamic solutions. In other words, resulting NCAs do not stay still. We also observe that the majority of the NCAs learn to produce solitons of various kinds. We discuss a few below, but encourage readers to explore them in the demo. </p>
 
-<h3 id='interesting-behaviours-of-inception-solitons'>Interesting behaviours of inception solitons</h3>
 <p></p>
 <figure>
 <!--<img src='images/mixed4c_439_microscope.png' style='width: 325px'></img>-->
@@ -231,7 +230,7 @@ Sobel_x & Sobel_y & Laplacian
 <p></p>
 <figure>
 <video src='videos/time_unsynced.mp4' autoplay loop controls muted style='width: 450px'></video>
-<figcaption>Two NCAs running next to each other, at different speeds. They can communicate through their shared edge.</figcaption>
+<figcaption>Two NCAs running next to each other, at different speeds, with some stochasticity in speed. They can communicate through their shared edge, the vertical boundary between them in the center of the state space.</figcaption>
 </figure>
 
 <p>Stochastic updates teach the cells to be robust to asynchronous updates. We investigate this property by taking it to an extreme and asking <i>how</i><i> do the cells react if two manifolds are allowed to communicate but one runs the NCA at a different speed than the other</i>? The result is surprisingly stable; the CA is still able to construct and maintain a consistent texture across the combined manifold. The time discrepancy between the two CAs sharing the state is far larger than anything the NCA experiences during training, showing remarkable robustness of the learned behaviour. Parallels can be drawn to organic matter self repairing, for instance a fingernail can regrow in adulthood despite the underlying finger already having fully developed; the two do not need to be sync. This result also hints at the possibility of designing distributed systems without having to engineer for a global clock, synchronization of compute units or even homogenous compute capacity. </p>
